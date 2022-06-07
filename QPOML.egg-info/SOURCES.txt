@@ -1,0 +1,7 @@
+README.md
+setup.py
+QPOML.egg-info/PKG-INFO
+QPOML.egg-info/SOURCES.txt
+QPOML.egg-info/dependency_links.txt
+QPOML.egg-info/requires.txt
+QPOML.egg-info/top_level.txt
