@@ -137,17 +137,20 @@ class collection:
                         elif preprocess_step=='normalize': 
                             input_df[col_name] = normalize(input_df[col_name])[0]
                         elif preprocess_step=='categorical': # applies ordinal categorical feature encoding ... future: one - hot? 
-                            column = np.array(input_df[col_name]) 
-                            encoder = preprocessing.LabelEncoder()
+                            column = np.array(input_df[col_name]).reshape(-1,1)
+                            encoder = preprocessing.OneHotEncoder()
                             encoder.fit(column)
-                            encoded_classes = encoder.classes_ # first appearance gets 0, then comes up 
+                            encoded_classes = encoder.categories_ # first appearance gets 0, then comes up 
                             if obj_type == 'qpo':
                                 self.qpo_categorical_key[col_name] = encoded_classes
                             elif obj_type == 'context': 
                                 self.context_categorical_key[col_name] = encoded_classes 
                             
-                            encoded_column = encoder.transform(column)
-                            input_df[col_name] = encoded_column
+                            encoded_column = encoder.transform(column).toarray()
+                            
+                            input_df[col_name] = [arr for arr in encoded_column]
+
+                            print(input_df)
 
                             # append qpo_categorical_keys_df to self? and context_categorical_keys_df to self? 
                             # So I only need to work with preprocessed versions until e.g. plotting when I can prettify them
@@ -225,8 +228,8 @@ class collection:
     ## UTILITIES ##
 
     # post load #
-    def correlation_matrix(self): 
-        self.check_loaded('correlation_matrix') 
+    def correlation_matrix(self):
+        self.check_loaded('dendogram')
     def dendogram(self):
         self.check_loaded('dendogram')
     def calculate_vif(self): # from statsmodels.stats.outliers_influence import variance_inflation_factor as vif; only applied to context
@@ -251,8 +254,28 @@ class collection:
     ## PLOTTING ## 
 
     # post load # 
-    def plot_correlation_matrix(self): # qpo, context, both 
-        self.check_loaded('plot_correlation_matrix') 
+    def plot_correlation_matrix(self, what_to_plot:str, ax=None, style:str='default'): 
+        self.check_loaded('correlation_matrix') 
+        
+        # if style==steps, then only show bottom half of correlation matrix
+
+        import matplotlib.pyplot as plt
+
+        if what_to_plot=='qpo': 
+            corr = self.qpo_df_preprocessed.drop(columns=['observation_ID']).select_dtypes(['number']).corr()
+        elif what_to_plot=='context': 
+            corr = self.context_df_preprocessed.drop(columns=['observation_ID']).select_dtypes(['number']).corr()
+            print(corr)
+        else: 
+            corr = self.qpo_df_preprocessed.merge(self.context_df_preprocessed, on='observation_ID').select_dtypes(['number']).corr()
+
+        if ax==None: 
+            fig, ax = plt.subplots()
+
+        ax.matshow(corr, cmap='coolwarm')
+        
+        plt.show()
+
     def plot_pairplot(self, dendogram=False): # because seaborn annoys me; qpo, context, both  
         self.check_loaded('plot_pairplot') 
     def plot_dendogram(self):# qpo, context
@@ -278,7 +301,7 @@ class collection:
 
     ## HELPERS ##
     def check_loaded(self, function:str):
-        if not self.evaluated: 
+        if not self.loaded: 
             raise Exception('collection must be loaded before '+function+'() function can be accessed') 
     
     def check_evaluated(self, function:str):
