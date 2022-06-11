@@ -60,7 +60,7 @@ def test_collection_initialization_from_lists():
 
         assert False 
 
-def test_collection_initialization_from_dfs(qpo_csv:str, context_csv:str): 
+def test_collection_initialization_from_dfs_and_plots(qpo_csv:str, context_csv:str): 
     from qpoml import context, qpo, collection 
     import warnings
     import pandas as pd
@@ -74,11 +74,12 @@ def test_collection_initialization_from_dfs(qpo_csv:str, context_csv:str):
         context_preprocess_dict = {'net_source_count_rate':'normalize','nthcomp_norm_before_error':'normalize','reduced_fit_stat':'normalize','hardness_ratio':'normalize'}
         collec.load(qpo_df = pd.read_csv(qpo_csv), context_df=pd.read_csv(context_csv), qpo_preprocess=qpo_preprocess_dict, context_preprocess=context_preprocess_dict)
         
-        print(collec.qpo_df)
-        print(collec.context_df)
-        print(collec.qpo_tensor_preprocessed)
+        #print(collec.qpo_df)
+        #print(collec.context_df)
+        #print(collec.qpo_tensor_preprocessed)
 
         collec.plot_correlation_matrix(what_to_plot='context')
+        collec.plot_dendogram(what_to_plot='context')
         
         assert True
 
@@ -86,5 +87,5 @@ def test_collection_initialization_from_dfs(qpo_csv:str, context_csv:str):
 
         assert False 
 
-test_collection_initialization_from_dfs(qpo_csv='./qpoml/tests/test_data/example_qpo_data.csv', 
+test_collection_initialization_from_dfs_and_plots(qpo_csv='./qpoml/tests/test_data/example_qpo_data.csv', 
                                         context_csv='./qpoml/tests/test_data/example_context_data.csv')
