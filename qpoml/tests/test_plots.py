@@ -1,4 +1,4 @@
-def first_test(qpo_csv='./qpoml/tests/test_data/example_qpo_data.csv', 
+def basic_plots(qpo_csv='./qpoml/tests/test_data/example_qpo_data.csv', 
                                         context_csv='./qpoml/tests/test_data/example_context_data.csv'):
 
     from qpoml import context, qpo, collection 
@@ -29,7 +29,39 @@ def first_test(qpo_csv='./qpoml/tests/test_data/example_qpo_data.csv',
         collec.load(qpo_list=qpo_list, context_list = context_list, qpo_preprocess=qpo_preprocess_dict, context_preprocess=context_preprocess_dict)
         collec.evaluate(model='random-forest')
 
-        collec.plot_feature_importances()
+        print(len(collec.qpo_df.index), len(collec.qpo_matrix))
+        print(len(collec.context_df.index))
+
+        #collec.plot_results_regression(what='frequency', which='second', xlim='min-max')
+        #collec.plot_correlation_matrix(what='qpo-and-context')
+        #collec.plot_feature_importances()
+
+        #collec.plot_pairplot(what='qpo-and-context')
+        #collec.plot_dendrogram(what='qpo')
+
+        spectrums_path = './qpoml/tests/test_data/spectrum_CSVs/'
+
+        qpo_list = []
+        qpo_df = pd.read_csv(qpo_csv)
+        for index in qpo_df.index: 
+            row = qpo_df.loc[index]
+            qpo_list.append(qpo(observation_ID=row['observation_ID'], frequency=row['frequency'], width=row['width'],
+                                amplitude=row['amplitude']))
+
+        context_list = []
+        for id in pd.read_csv('./qpoml/tests/test_data/ids_list.csv')['observation_ID']: 
+            spectrum = pd.read_csv(spectrums_path+id+'.csv')
+            context_list.append(context(observation_ID=id, rebin_spectrum=7, spectrum=spectrum))
+
+        context_list = context_list+context_list
+        qpo_preprocess_dict = {'frequency':[0,20],'width':'normalize','amplitude':'normalize'}
+        collec_two = collection()
+        collec_two.load(qpo_list=qpo_list, context_list=context_list, qpo_preprocess=qpo_preprocess_dict, context_preprocess='normalize')
+
+        print(len(collec_two.qpo_df.index), len(collec_two.qpo_matrix))
+        print(len(collec_two.spectrum_matrix))
+
+        collec_two.plot_correlation_matrix('context')
 
         assert True 
 
@@ -37,4 +69,4 @@ def first_test(qpo_csv='./qpoml/tests/test_data/example_qpo_data.csv',
 
         assert False
 
-first_test()
+basic_plots()

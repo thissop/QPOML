@@ -1,4 +1,5 @@
 from email.policy import default
+from tkinter import Y
 import numpy as np
 import pandas as pd
 import warnings 
@@ -10,11 +11,6 @@ plt.style.use('seaborn-darkgrid')
 plt.rcParams['font.family']='serif'
 mono_cmap = 'Blues'
 bi_cmap = sns.diverging_palette(220, 10, as_cmap=True)
-
-
-
-warnings.warn('in the spirit of minimum viable product, for now only predict qpos based on observations, or observations on qpos')
-warnings.warn('TELL HRL ABOUT MVP!!')
 
 class qpo: 
     def __init__(self, observation_ID:str, frequency:float, width:float=None, amplitude:float=None, Q:float=None):
@@ -72,7 +68,7 @@ class context:
         
         if not isinstance(self.spectrum_df, (type(None))): 
             cols = list(self.spectrum_df)
-            default_cols = ['channel_energy', 'channel_energy_range']
+            default_cols = ['energy', 'energy_range']
             ordinate_col = np.setdiff1d(cols, default_cols)[0]
         
             self.ordinate_col = ordinate_col
@@ -95,9 +91,9 @@ class context:
             # warn users that last channels will be cut off 
 
             for i, j in zip(lower, upper): 
-                rebin_energies.append(np.mean(self.spectrum_df['channel_energy'][i:j]))
+                rebin_energies.append(np.mean(self.spectrum_df['energy'][i:j]))
                 
-                flat = np.array(self.spectrum_df['channel_energy_range'])[i:j]
+                flat = np.array(self.spectrum_df['energy_range'])[i:j]
                 
                 if type(flat[0])==str: 
                     flat = np.array([eval(i) for i in flat])
@@ -109,8 +105,8 @@ class context:
                 rebin_ordinates.append(np.sum(self.spectrum_df[ordinate_col][i:j]))
 
             rebin_df = pd.DataFrame()
-            rebin_df['channel_energy'] = rebin_energies
-            rebin_df['channel_energy_range'] = rebin_energy_ranges
+            rebin_df['energy'] = rebin_energies
+            rebin_df['energy_range'] = rebin_energy_ranges
             rebin_df[ordinate_col] = rebin_ordinates
             self.spectrum_df = rebin_df
 
@@ -145,16 +141,17 @@ class collection:
         self.loaded = False
         self.evaluated = False
 
-        self.context_df = None
-        self.qpo_df = None 
-
-        self.spectrum_matrix = None # will be preprocessed 
-        self.qpo_matrix = None # will be preprocessed 
-
         self.qpo_categorical_key = {}
+        self.qpo_df = None 
+        self.qpo_matrix = None # will be preprocessed 
+        
+        self.context_df = None
         self.context_categorical_key = {}
+        self.context_is_spectrum = False
+        self.spectrum_matrix = None # will be preprocessed
+        self.spectrum_matrix_df = None
         self.ordinate_col= None
-        self.spectral_df_template = None
+        self.spectrum_df_template = None
 
         ### evaluate initialized ### 
         
@@ -214,21 +211,21 @@ class collection:
             self.train_indices = train_indices
             self.test_indices = test_indices
 
-            context_not_spectrum = True  
+            context_is_spectrum = False
             if 'spectrum_df' in context_list[0].properties.keys(): 
-                context_not_spectrum = False 
                 ordinate_col = context_list[0].ordinate_col
                 self.ordinate_col = ordinate_col
-                self.spectral_df_template = context_list[0].spectrum_df.drop(columns=[ordinate_col])
+                self.spectrum_df_template = context_list[0].spectrum_df.drop(columns=[ordinate_col])
+                context_is_spectrum = True
 
-            self.context_not_spectrum = context_not_spectrum
+            self.context_is_spectrum = context_is_spectrum
 
             qpo_df = pd.DataFrame(columns=list(qpo_list[0].properties.keys()))
-            if context_not_spectrum: 
+            if not context_is_spectrum: 
                 context_df = pd.DataFrame(columns=list(context_list[0].properties.keys()))
             for counter in range(len(qpo_list)): 
                 qpo_df.loc[counter] = list(qpo_list[counter].properties.values()) 
-                if context_not_spectrum: 
+                if not context_is_spectrum: 
                     context_df.loc[counter] = list(context_list[counter].properties.values())
 
             
@@ -243,7 +240,7 @@ class collection:
                             if isinstance(preprocess_step, (list)): 
                                 # min max based on limits 
                                 input_df[col_name] = normalize(input_df[col_name], preprocess_step[0], preprocess_step[1])[0]
-                                # reccomended 
+                                # recommended 
 
                             elif isinstance(preprocess_step, (str)): 
                                 if preprocess_step=='standardize': 
@@ -307,11 +304,13 @@ class collection:
             preprocess(self, input_df=qpo_df, preprocess=qpo_preprocess, obj_type='qpo')
             self.qpo_df = qpo_df
 
-            if context_not_spectrum: 
+            if context_is_spectrum: 
+                preprocess(self, preprocess=context_preprocess, context_list=context_list, context_is_spectrum=True)
+            else: 
                 preprocess(self, input_df=context_df, preprocess=context_preprocess, obj_type='context')
                 self.context_df = context_df
-            else: 
-                preprocess(self, preprocess=context_preprocess, context_list=context_list, context_is_spectrum=True)
+                
+            
 
             # Create QPO matrix # 
             num_qpo_props = len(list(qpo_df.iloc[[0]]))-1
@@ -370,12 +369,10 @@ class collection:
         X_train, X_test, y_train, y_test = 4*[None]
 
         if x=='context': 
-            print('xtest is conetx')
             if type(context_df)!=type(None):
                 temp = context_df.drop(columns=['observation_ID'])
                 X_train = temp.iloc[train_indices]
                 X_test = temp.iloc[test_indices] 
-                print('x test train was good')
             elif type(spectrum_matrix)!=type(None): 
                 pass
             else: 
@@ -396,10 +393,9 @@ class collection:
             X_train = qpo_matrix[train_indices]
             X_test = qpo_matrix[test_indices]
 
-        elif y=='qpo': 
+        elif y=='qpo':
             y_train = qpo_matrix[train_indices]
             y_test = qpo_matrix[test_indices]
-            print('y test is good too')
 
         if type(None) in [type(i) for i in [X_train, X_test, y_train, y_test]]: 
             raise Exception('')
@@ -503,8 +499,6 @@ class collection:
                     warnings.warn('set global mae or mse to optimize?')
 
                 else:
-                    print('tryna do it') 
-                    print(X_train, y_train)
                     internal_model.fit(X=X_train, y=y_train)
                     
                     self.fit_model = internal_model 
@@ -526,6 +520,18 @@ class collection:
             # thus, X_train, X_test, y_train, y_test, trained_model, and predictions will be available to users via standard accessor methods. <=== do that! 
 
         self.evaluated = True
+
+
+
+
+
+
+
+
+
+
+
+
 
     # Utilities # <== needs better name  
 
@@ -558,23 +564,56 @@ class collection:
     def correlation_matrix(self, what:str): # <== I don't think this works for spectrums? 
         self.check_loaded('correlation_matrix')
 
+        cols = []
+
+        context_is_spectrum = self.context_is_spectrum
+
         if what=='qpo-and-context': 
-            sub_df = self.qpo_df_preprocessed.merge(self.context_df_preprocessed, on='observation_ID').select_dtypes(['number']) 
-            corr = sub_df.corr() # fix for spectrum! 
+
+            if context_is_spectrum: 
+
+                warnings.warn('need to test this lol')
+                warnings.warn('I need to fix this to merge on observation_ID somehow')
+                spectrum_cols = self.spectrum_df_template['energy']
+                spectrum_df = pd.DataFrame(self.spectrum_matrix, columns=cols)
+                
+                temp_df = self.qpo_df.select_dtypes(['number'])
+
+                for col in spectrum_cols: 
+                    temp_df[col] = spectrum_df[col]
+                
+                cols = list(temp_df)
+                corr = temp_df.corr()
+
+            else: 
+                temp_df = self.qpo_df.merge(self.context_df, on='observation_ID').select_dtypes(['number']) 
+                corr = temp_df.corr() # fix for spectrum! 
+                cols = list(temp_df.drop(columns=['observation_ID']))
 
         elif what=='context': 
+            
+            if context_is_spectrum: 
+                cols = self.spectrum_df_template['energy']
+                temp_df = pd.DataFrame(self.spectrum_matrix, columns=cols)
+                corr = temp_df.corr()
 
-            sub_df = self.context_df_preprocessed.drop(columns=['observation_ID']).select_dtypes(['number'])
-            corr = sub_df.corr()
+            else: 
+                temp_df = self.context_df.select_dtypes(['number'])
+                corr = temp_df.corr()
+                cols = list(temp_df)
+
+        elif what=='qpo': 
+            temp_df = self.qpo_df.select_dtypes(['number'])
+            corr = temp_df.corr()
+            cols = list(temp_df)
+
         else: 
             raise Exception('')
         
-        cols = [] # fix this! 
-
         return corr, cols
 
-    def dendogram(self, what:str): # rename? 
-        self.check_loaded('dendogram')
+    def dendrogram(self, what:str): # rename? 
+        self.check_loaded('dendrogram')
 
         from scipy.stats import spearmanr
         from scipy.cluster import hierarchy
@@ -583,9 +622,9 @@ class collection:
         if what=='qpo': 
             sub_df = self.qpo_df_preprocessed.drop(columns=['observation_ID']).select_dtypes(['number'])
         elif what=='context': 
-            sub_df = self.context_df_preprocessed.drop(columns=['observation_ID']).select_dtypes(['number'])
+            sub_df = self.context_df.drop(columns=['observation_ID']).select_dtypes(['number'])
         else: 
-            sub_df = self.qpo_df_preprocessed.merge(self.context_df_preprocessed, on='observation_ID').select_dtypes(['number']) 
+            sub_df = self.qpo_df_preprocessed.merge(self.context_df, on='observation_ID').select_dtypes(['number']) 
         
         cols = list(sub_df)
 
@@ -619,7 +658,7 @@ class collection:
             temp = self.spectrum_matrix
             temp = np.transpose(temp)
             vif_df['VIF'] = [vif(temp.values, i) for i in range(temp.shape[1])]
-            vif_df['Column'] = self.spectral_df_template['channel_energy']
+            vif_df['Column'] = self.spectrum_df_template['energy']
         
         else: 
             raise Exception('')
@@ -645,7 +684,7 @@ class collection:
 
         ols_cols = vif_info['Column'][mask]
 
-    def remove_from_dendogram(self, cutoff_value): # rename? 
+    def remove_from_dendrogram(self, cutoff_value): # rename? 
         pass 
 
     def pca_transform(self): # once these happen, context_df and arrays are changed to place holder names with transformed vectors;  only applied to context
@@ -656,19 +695,111 @@ class collection:
 
     ### Post Evaluation ### 
     
-    def results_regression(self):
+    def results_regression(self, what:str='frequency', which:str='all'):
         self.check_evaluated('results_regression')
-    
+
+        from scipy.stats import linregress 
+
+        predictions = self.predictions 
+        y_test = self.y_test 
+
+        orders = ['first', 'second', 'third', 'fourth', 'fifth',
+                  'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
+
+        if self.y_name == 'qpo': 
+            
+            qpo_cols = list(self.qpo_df.drop(columns=['observation_ID']))
+            base_index = qpo_cols.index(what)
+            shift = len(qpo_cols)
+            num_qpos = len(y_test[0])
+            
+            regression_x = np.transpose(y_test)
+            regression_y = np.transpose(predictions)
+
+            # collect what 
+            idx = np.arange(base_index, len(regression_x), step=shift, dtype=int)
+
+            regression_x, regression_y = (i[idx] for i in (regression_x, regression_y)) 
+
+            if which == 'all': 
+                regression_x = regression_x.flatten()
+                regression_y = regression_y.flatten()
+
+            else: 
+                idx = orders.index(which.lower())
+                regression_x, regression_y = (i[idx] for i in (regression_x, regression_y))
+
+            m, b, r, _, _ = linregress(regression_x, regression_y) # fix, and does y test go on bottom or top? 
+
+            return regression_x, regression_y, (m, b, r)
+
+        elif self.y_name == 'context': 
+            pass
+
+        else: 
+            raise Exception('')
+        
     def feature_importances(self, kind:str='default'):
 
-        if kind=='default': # fix this for shap values, etc. 
-            if self.fit_model_name in ['ada-boost', 'decision-tree', 'random-forest']: # xgboost? 
-                feature_importances = self.fit_model.feature_importances_
-
-        return feature_importances 
+        import shap
 
         self.check_evaluated('feature_importances')
+        
+        X, y = (self.X_test, self.y_test)
+        model = self.fit_model 
+        model_name = self.fit_model_name 
+        y_cols = np.array([]) # FIX!
+        permutation_df = None
 
+        warnings.warn('fix above!')
+
+        importances_df = None
+        shap_values = None
+
+        if kind=='default': # fix this for shap values, etc.  ---> may not be MDI, but is default feature importance 
+                if hasattr(fit_model, 'feature_importances_'): 
+                    feature_importances = self.fit_model.feature_importances_
+                    
+        elif kind=='permutation': 
+            
+            from sklearn.inspection import permutation_importance
+
+            permutation_importances = permutation_importance(estimator=model, X=X, y=y)
+            feature_importances = permutation_importances['importances_mean']
+
+            sort_idx = np.argsort(feature_importances)[::-1]
+
+            importances_df = pd.DataFrame(permutation_importances.importances[sort_idx].T, columns=y_cols[sort_idx])
+        
+            warnings.warn('return diststributions themselves as third param for permutation (for box and whisker)')
+        
+        elif kind=='kernel-shap': 
+            warnings.warn('need to implement check to see if model is supported')
+            explainer = shap.KernelExplainer(model.predict, X)
+            shap_values = explainer.shap_values(X)
+            shap_values = np.array(shap_values).T
+            feature_importances = np.array([np.mean(np.abs(i)) for i in shap_values])
+
+        elif kind=='tree-shap': 
+            warnings.warn('need to check if possible!')
+            explainer = shap.TreeExplainer(model)
+            shap_values = np.array(explainer.shap_values(X))
+            shap_values = np.array(shap_values).T
+            feature_importances = np.array([np.mean(np.abs(i)) for i in shap_values])
+
+
+        else: 
+            warnings.warn('don\'t need to do xgboost default in spirit of MVP')
+            raise Exception('')
+
+        if type(sort_idx)==type(None): 
+            sort_idx = np.argsort(feature_importances)[::-1]
+    
+        if kind=='tree-shap' or kind=='kernel-shap': 
+            importances_df = pd.DataFrame(shap_values, columns=y_cols[sort_idx])
+
+        return feature_importances[sort_idx], y_cols[sort_idx], importances_df
+        
     ''' to do '''
 
     def confusion_matrix(self): 
@@ -688,60 +819,110 @@ class collection:
 
     ### Post Load ### 
     
-    def plot_correlation_matrix(self, what_to_plot:str, ax=None, matrix_style:str='steps', cmap=bi_cmap): 
+    def plot_correlation_matrix(self, what:str, ax=None, matrix_style:str='default', cmap=bi_cmap): 
         self.check_loaded('correlation_matrix') 
         
         # if style==steps, then only show bottom half of correlation matrix
-
-        corr, cols = self.correlation_matrix(what_to_correlate=what_to_plot)
+        
+        corr, cols = self.correlation_matrix(what=what)
 
         if ax==None: 
             fig, ax = plt.subplots()
 
         if matrix_style=='default': 
-            mask = np.triu(np.ones_like(corr, dtype=bool))
+            sns.heatmap(corr, cmap=cmap,
+                ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols,
+                xticklabels=cols, cbar_kws={"shrink": .75})
 
-        else: 
-            mask = np.zeros_like(corr)
-            mask[np.triu_indices_from(mask)] = True
-            
-
-        sns.heatmap(corr, mask=mask, cmap=cmap,
-            square=True, ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols,
-            xticklabels=cols, cbar_kws={"shrink": .75})
-
-            # maybe no square? 
-
+        elif matrix_style=='steps': 
+            mask = np.triu(np.ones_like(corr, dtype=bool))   
+            print(corr)
+            print(corr[mask])
+            #print(np.shape(corr))
+            sns.heatmap(corr, mask=mask, cmap=cmap,
+                ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols,
+                xticklabels=cols, cbar_kws={"shrink": .75})
 
         plt.tight_layout()
         
         plt.show()
 
-    def plot_pairplot(self, dendogram=False): # because seaborn annoys me; qpo, context, both  
+    def plot_pairplot(self, what:str, ax=None, steps:bool=False): # because seaborn annoys me; qpo, context, both  
         self.check_loaded('plot_pairplot') 
-    
-    def plot_dendogram(self, what_to_plot:str, ax=None):# qpo, context
-        self.check_loaded('plot_dendogram') 
 
-        from scipy.cluster import hierarchy
+        import matplotlib.pyplot as plt
+        import seaborn as sns
 
-        corr, dist_linkage, cols = self.dendogram(what_to_calculate=what_to_plot)
+        temp_df = None 
+        if what=='context': 
+            if self.context_is_spectrum: 
+                cols = self.spectrum_df_template['energy']
+                temp_df = pd.DataFrame(self.spectrum_matrix, columns=cols)
+                
+            else: 
+                temp_df = self.context_df.drop(columns=['observation_ID'])
 
-        if ax==None: 
-            fig, ax = plt.subplots(figsize=(4,6))
 
-        dendro = hierarchy.dendrogram(
-            dist_linkage, ax=ax, labels=['a','b','c','d'], leaf_rotation=90
-        )
+        elif what=='qpo': 
+            temp_df = self.qpo_df.drop(columns=['observation_ID'])
         
-        dendro_idx = np.arange(0, len(dendro["ivl"]))
+        elif what=='qpo-and-context': 
+            if self.context_is_spectrum: 
+                warnings.warn('fix this')
+            
+            else: 
+                temp_df = self.qpo_df.merge(self.context_df, on='observation_ID').select_dtypes(['number'])
 
-        ax.imshow(corr[dendro["leaves"], :][:, dendro["leaves"]])
-        #ax.set_xticks(dendro_idx)
-        #ax.set_yticks(dendro_idx)
-        #ax.set_xticklabels(cols, rotation="vertical")
-        #ax.set_yticklabels(cols)
-        #plt.tight_layout()
+        if type(temp_df)!=type(None): 
+
+            ax = sns.pairplot(data=temp_df, corner=steps)
+            plt.tight_layout()
+            plt.show()
+
+        else: 
+            raise Exception('')
+
+    def plot_dendrogram(self, what:str, ax=None):# qpo, context
+        self.check_loaded('plot_dendrogram') 
+        from scipy.stats import spearmanr
+        from scipy.cluster import hierarchy
+        from scipy.spatial.distance import squareform
+        import matplotlib.pyplot as plt
+
+
+        X = None 
+        cols = None 
+        if what=='qpo':
+            X = self.qpo_df.select_dtypes(['number'])
+            cols = list(self.qpo_df.drop(columns=['observation_ID'])) 
+        elif what=='context': 
+
+            X = self.context_df.select_dtypes(['number'])
+            cols = list(self.context_df.drop(columns=['observation_ID']))
+
+        external_plot = True 
+        if type(ax)==type(None): 
+            fig, ax = plt.subplots()
+        else: 
+            external_plot = False
+
+        corr = spearmanr(X).correlation
+
+        # Ensure the correlation matrix is symmetric
+        corr = (corr + corr.T) / 2
+        np.fill_diagonal(corr, 1)
+
+        # We convert the correlation matrix to a distance matrix before performing
+        # hierarchical clustering using Ward's linkage.
+        distance_matrix = 1 - np.abs(corr)
+        dist_linkage = hierarchy.ward(squareform(distance_matrix))
+        hierarchy.dendrogram(
+            dist_linkage, labels=cols, ax=ax, leaf_rotation=90
+        )
+
+        if not external_plot: 
+            fig.tight_layout()
+
         plt.show()
     
     def plot_vif(self): 
@@ -756,10 +937,47 @@ class collection:
 
     ### Post Evaluation ### 
     
-    def plot_results_regression(self, color=''): # column name from either context or parameter name from qpo. if categorical, will plot and label by categories. otherwise, will plot by continuous color (add add color bar?))  
+    def plot_results_regression(self, ax=None, what:str='frequency', which:str='all', xlim:list=[0,1]): # column name from either context or parameter name from qpo. if categorical, will plot and label by categories. otherwise, will plot by continuous color (add add color bar?))  
+        
+        # for x lim, it will also used on ylim so that the graph is 1:1...default is 0:1 for normalization 
+        # declare style seperately...i.e. don't declare it if ax!=None? 
+        # discuss seaborn style plotting routines?
+        # but not fully seaborn because seaborn annoys me? 
+
         self.check_evaluated('plot_results_regression')
-    
-    def plot_feature_importances(self, ax=None):
+
+
+        import matplotlib.pyplot as plt 
+
+        regression_x, regression_y, (m, b, r) = self.results_regression(what=what, which=which)
+
+        if type(ax)==type(None): 
+            fig, ax = plt.subplots()
+
+        ax.scatter(regression_x, regression_y)
+        
+        if type(xlim)==str:
+            if xlim=='min-max':
+                combined = np.concatenate((regression_x, regression_y))
+                xlim = [np.min(combined), np.max(combined)]
+                diff = (xlim[1]-xlim[0])/20
+                bounds = [xlim[0]-diff, xlim[1]+diff]
+                ax.set(xlim=bounds, ylim=bounds)
+        
+        else: 
+            ax.set(xlim=xlim, ylim=ylim)
+
+        ax.plot(xlim, xlim, label='1:1')
+        r_sq = str(round(r**2, 3))
+        ax.plot(np.array(xlim), m*np.array(xlim)+b, label='Best Fit ('r'$r^2=$'+' '+r_sq+')') # math in equations! set that globally! 
+
+        ax.set(xlabel='True '+what.capitalize(), ylabel='Predicted '+what.capitalize())
+
+        ax.legend()
+
+        plt.show()
+
+    def plot_feature_importances(self, ax=None, kind:str='kernel-shap'):
         # option to only plot top n important features...default plots feature importances for all 
         # if set to channels, make sure there is an option to label the bars by spectral ranges! probably like low\nhigh or just start, as end can be inferred from next start
         # future idea: allow for "discontinuities" in spectral channels (e.g. channels goes from 1.4-4.5 kev merged with 6.7-9.4 keV)
@@ -772,26 +990,21 @@ class collection:
         if type(ax)==type(None): 
             fig, ax = plt.subplots()
 
-        feature_importances = self.feature_importances()
-        idx = np.argsort(feature_importances)[::-1]
-        #feature_importances = feature_importances[idx]
+        feature_importances, y_cols, importances_df = self.feature_importances(kind=kind)
         
-        labels = None
+        if type(importances_df) != None: 
+        
+            y_pos = np.arange(len(y_cols))
 
-        if type(self.context_df)!=type(None): 
-            labels = list(self.context_df.drop(columns=['observation_ID']))
-
-        if type(labels)!=type(None): 
-            #labels = labels[feature_importances]
-
-            importances = pd.DataFrame(feature_importances.T, labels)
-    
-            ax = importances.plot.box(vert=False, whis=10)
-            ax.set_title("MDI Feature Importances")
-            ax.axvline(x=0, color="k", linestyle="--")
-            ax.set_xlabel("Decrease in accuracy score")
+            ax.barh(y_pos, feature_importances, align='center')
+            ax.set_yticks(y_pos, labels=y_cols)        
             ax.figure.tight_layout()
 
+        else: 
+            all_data = [feature_importances[i] for i in list(feature_importances)]
+            ax.boxplot(all_data, vert=False, labels=y_cols)
+        
+        plt.tight_layout()
         plt.show()
 
     ''' to do '''    
