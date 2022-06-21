@@ -1,27 +1,33 @@
-from qpoml import qpo 
-from qpoml import observation 
-from qpoml import collection
+import numpy as np
 
-from qpoml import plotting 
+import pandas as pd 
 
-q = qpo(1, 0.2, 0.1, type='A')
-#print(q.properties)
+qpo_tensor = np.array([[2.562282895,0.230605,0.00205078, 0, 0, 0, 0, 0, 0], 
+              [2.1,0.210978,0.002437472,2.506290149,0.240978,0.00337472, 0, 0, 0], 
+              [2.648626213,0.238384,0.00271215,3.648626213,0.338384,0.00371215,3.02,0.308384,0.0041215]])
 
-#print(plotting.test())
+print(qpo_tensor)
+print(qpo_tensor.T)
 
-import pandas as pd
-import warnings 
+quit()
 
-df = pd.DataFrame(list(zip(['11212', '12121'], ['Maxi', 'Swift'])), columns=['observation_ID', 'object_type'])
+transposed = qpos.T
+#print(transposed)
 
-observations = collection(df)
+for i in range(max_simultaneous+1): 
+    print('lol')
+    combined_indices = []
+    for j in range(0, num_features+1, num_features): 
+        idx = i+j
+        combined_indices.append(idx)
 
-warnings.warn('make collections object subscriptable')
-#print(observations.observations[0].observation_ID)
+    flat = transposed[combined_indices].flatten()
 
-obs = observation(observation_ID='31321', hardness=5, rms=2, Tin=0.5)
-#print(obs.features)
+    low, high = (np.min(flat), np.max(flat))
 
-from qpoml import utilities 
+    for idx in combined_indices:
+        x = transposed[idx] 
+        transposed[idx] = (x-low)/(high-low)
 
-utilities.lol([q,q], [q,q,q])
+print(transposed.T)
+    
