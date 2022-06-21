@@ -34,9 +34,17 @@ class collection:
         self.qpo_features = None # done 
         self.qpo_approach = None # done 
 
-        self.train_test_indices = None 
+        ### EVALUATE INITIALIZED  ### 
+        self.all_train_indices = None # done 
+        self.all_test_indices = None # done
 
-        ### stage tracking ### 
+        self.evaluated_models = None # done
+        self.predictions = None # done
+
+        self.X_train = None # done
+        self.X_test = None # done
+        self.y_train = None # done
+        self.y_test = None # done
 
     ## LOAD ## 
     def load(self, qpo_csv:str, context_csv:str, context_type:str, context_preprocess, qpo_preprocess:dict, qpo_approach:str='single', spectrum_approach:str='by-row', rebin:int=None) -> None: 
@@ -180,7 +188,20 @@ class collection:
         context_tensor = self.context_tensor
         qpo_tensor = self.qpo_tensor
 
+        
+
         if qpo_approach == 'single': 
+                
+            all_train_indices = []
+            all_test_indices = []
+
+            evaluated_models = [] 
+            predictions = [] 
+
+            X_train = []
+            X_test = []
+            y_train = []
+            y_test = []
 
             if evaluation_approach == 'k-fold' and folds is not None: 
                 kf = KFold(n_splits=folds, random_state=random_state)
@@ -188,42 +209,65 @@ class collection:
                 train_indices = np.array([i for i, _ in kf.split(context_tensor, random_state=random_state)]).astype(int)
                 test_indices = np.array([i for _, i in kf.split(context_tensor, random_state=random_state)]).astype(int)
 
-                evaluated_models = [] 
-                predictions = [] 
-
-                global_X_train = []
-                global_X_test = []
-                global_y_train = []
-                global_y_test = []
+                all_train_indices.append(train_indices)
+                all_test_indices.append(test_indices)
 
                 for train_indices_fold, test_indices_fold in zip(train_indices, test_indices): 
-                    X_train = context_tensor[train_indices_fold]
-                    X_test = context_tensor[train_indices_fold] 
-                    y_train = qpo_tensor[train_indices_fold]
-                    y_test = qpo_tensor[test_indices_fold]
+                    X_train_fold = context_tensor[train_indices_fold]
+                    X_test_fold = context_tensor[train_indices_fold] 
+                    y_train_fold = qpo_tensor[train_indices_fold]
+                    y_test_fold = qpo_tensor[test_indices_fold]
 
-                    model.fit(X_train, y_train)
-                    predictions.append(model.predict(X_test, y_test))
-                    evaluated_models.append(model)
+                    model_fold = model 
+                    model_fold.fit(X_train_fold, y_train_fold)
+                    predictions.append(model_fold.predict(X_test_fold, y_test_fold))
+                    evaluated_models.append(model_fold)
 
-                    global_X_train.append(X_train)
-                    global_X_test.append(X_test)
-                    global_y_train.append(y_train)
-                    global_y_test.append(y_test)
+                    X_train.append(X_train_fold)
+                    X_test.append(X_test_fold)
+                    y_train.append(y_train_fold)
+                    y_test.append(y_test_fold)
 
             elif evaluation_approach == 'default': 
 
                 train_indices, test_indices = train_test_split(np.arange(0,len(qpo_tensor), 1).astype(int), random_state=random_state)
                 
+                all_train_indices.append(train_indices)
+                all_test_indices.append(test_indices)
 
+                X_train_fold = context_tensor[train_indices_fold]
+                X_test_fold = context_tensor[train_indices_fold] 
+                y_train_fold = qpo_tensor[train_indices_fold]
+                y_test_fold = qpo_tensor[test_indices_fold]
+
+                model.fit(X_train_fold, y_train_fold)
+                predictions.append(model.predict(X_test_fold, y_test_fold))
+                evaluated_models.append(model)
+
+                X_train.append(X_train_fold)
+                X_test.append(X_test_fold)
+                y_train.append(y_train_fold)
+                y_test.append(y_test_fold)
 
 
             else: 
                 raise Exception('')
 
+            self.all_train_indices = all_train_indices
+            self.all_test_indices = all_test_indices
+
+            self.evaluated_models = evaluated_models 
+            self.predictions = predictions 
+
+            self.X_train = X_train
+            self.X_test = X_test
+            self.y_train = y_train
+            self.y_test = y_test
+
 
         elif qpo_approach == 'eurostep': 
             pass 
+        
         else: 
             raise Exception('')
 

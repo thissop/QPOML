@@ -17,6 +17,7 @@ def preprocess1d(x, preprocess):
         min_value = preprocess[0]
         max_value = preprocess[1]
         modified = (x-min_value)/(max_value-min_value) 
+        modified = modified*(1 - 0.1) + 0.1 # so it will be output as 0.1-1 range 
     elif type(preprocess) is str: 
         if preprocess == 'as-is': 
             modified = x 
@@ -24,6 +25,7 @@ def preprocess1d(x, preprocess):
             min_value = np.min(x)
             max_value = np.max(x)
             modified = (x-min_value)/(max_value-min_value)
+            modified = modified*(1 - 0.1) + 0.1
         elif preprocess == 'standardize': 
             mean = np.mean(x)
             sigma = np.std(x)

@@ -1,4 +1,7 @@
-def test_load(): 
+from qpoml.main import collection
+
+
+def test_load_basic(): 
     from qpoml.better_main import collection
 
     spectrum_context = './research and development/example_spectrum.csv'
@@ -26,4 +29,11 @@ def test_load():
     collection_three.load(qpo_csv=order_qpo, context_csv=scalar_context, context_type='scalar', 
                     context_preprocess={'gamma':[1,4], 'tin':[0.1,3]}, qpo_preprocess=qpo_preprocess, qpo_approach='single')
 
-test_load()
+#test_load_basic()
+
+def test_evaluation_single(): 
+    
+    collection_one = collection()
+    collection_one.load()
+    
+    pass 
