@@ -2,7 +2,7 @@ import numpy
 import pandas
 import warnings 
 import numpy as np
-import pandas as pd 
+import pandas as pd
 
 class collection: 
 
@@ -37,19 +37,20 @@ class collection:
         self.train_test_indices = None 
 
         ### stage tracking ### 
-        
+
     ## LOAD ## 
     def load(self, qpo_csv:str, context_csv:str, context_type:str, context_preprocess, qpo_preprocess:dict, qpo_approach:str='single', spectrum_approach:str='by-row', rebin:int=None) -> None: 
         
+        self.dont_do_twice('load')
+
         from collections import Counter
-        from utilities import preprocess1d
+        from qpoml.utilities import preprocess1d
 
         # check so you can do it once it's already been loaded or evaluated 
 
         ### CONTEXT ### 
-        # can context be loaded independently? 
 
-        context_df = pd.read_csv(context_csv)
+        context_df = pd.read_csv(context_csv).sample(frac=1, random_state=self.random_state) # shuffle 
         temp_df = context_df.drop(columns=['observation_ID'])
         
         observation_IDs = list(context_df['observation_ID'])
@@ -58,6 +59,8 @@ class collection:
 
         if context_type=='spectrum': 
             self.context_is_spectrum = True 
+
+            context_tensor = context_tensor.astype(float)
             
             spectral_ranges = []
             spectral_centers = []
@@ -102,20 +105,19 @@ class collection:
             self.spectral_centers = spectral_centers 
 
         else: 
-            for index, arr in enumerate(context_tensor): 
+            transposed = np.transpose(context_tensor)
+            for index, arr in enumerate(transposed): 
                 arr = preprocess1d(arr, context_preprocess[context_features[index]])
-                context_tensor[index] = arr 
+                transposed[index] = arr 
+            
+            context_tensor = np.transpose(transposed)
 
         ### QPO ### 
-
-        # bruhhhhhhh...QPO features should be normalized as the columns in the dataframe, and then they should be passed to the tensor. 
-        # normalize them in 0.1-1.0 range, and then pad single approach with zeros after. 
-        # when I am evaluating the results afterwards, will need to pad eurostep vectors with zeros so that the results can be the same for each
 
         num_qpos = []
 
         qpo_df = pd.read_csv(qpo_csv)
-        qpo_features = list(qpo_df.drop(columns=self.qpo_reserved_words))
+        qpo_features = [i for i in list(qpo_df) if i not in self.qpo_reserved_words]
 
         max_simultaneous_qpos = Counter(qpo_df['observation_ID']).most_common(1)[0][1]
         max_length = max_simultaneous_qpos*len(qpo_features)
@@ -140,14 +142,13 @@ class collection:
 
             qpo_tensor.append(qpo_vector)
 
-    
         if qpo_approach == 'single': 
             # pad with zeros  
             for index, arr in enumerate(qpo_tensor): 
                 arr = np.concatenate((arr, np.zeros(shape=max_length-len(arr)))) 
                 qpo_tensor[index] = arr 
 
-        qpo_tensor = np.array(qpo_tensor)
+        qpo_tensor = np.array(qpo_tensor, dtype=object)
 
         ### UPDATE ATTRIBUTES ### 
         self.observation_IDs = observation_IDs 
@@ -161,17 +162,74 @@ class collection:
 
         self.loaded = True 
 
-        print(context_tensor)
         print(qpo_tensor)
 
     ## EVALUATE ##     
-    def evaluate(self): 
+    def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None): 
 
-        # check so you can't do it again once it's already been evaluated 
+        self.check_loaded('evaluate')
+        self.dont_do_twice('evaluate')
+
+        from sklearn.model_selection import KFold 
+        from sklearn.model_selection import train_test_split 
+
+        random_state = self.random_state
+
+        qpo_approach = self.qpo_approach 
+
+        context_tensor = self.context_tensor
+        qpo_tensor = self.qpo_tensor
+
+        if qpo_approach == 'single': 
+
+            if evaluation_approach == 'k-fold' and folds is not None: 
+                kf = KFold(n_splits=folds, random_state=random_state)
+                
+                train_indices = np.array([i for i, _ in kf.split(context_tensor, random_state=random_state)]).astype(int)
+                test_indices = np.array([i for _, i in kf.split(context_tensor, random_state=random_state)]).astype(int)
+
+                evaluated_models = [] 
+                predictions = [] 
+
+                global_X_train = []
+                global_X_test = []
+                global_y_train = []
+                global_y_test = []
+
+                for train_indices_fold, test_indices_fold in zip(train_indices, test_indices): 
+                    X_train = context_tensor[train_indices_fold]
+                    X_test = context_tensor[train_indices_fold] 
+                    y_train = qpo_tensor[train_indices_fold]
+                    y_test = qpo_tensor[test_indices_fold]
+
+                    model.fit(X_train, y_train)
+                    predictions.append(model.predict(X_test, y_test))
+                    evaluated_models.append(model)
+
+                    global_X_train.append(X_train)
+                    global_X_test.append(X_test)
+                    global_y_train.append(y_train)
+                    global_y_test.append(y_test)
+
+            elif evaluation_approach == 'default': 
+
+                train_indices, test_indices = train_test_split(np.arange(0,len(qpo_tensor), 1).astype(int), random_state=random_state)
+                
 
 
 
+            else: 
+                raise Exception('')
 
+
+        elif qpo_approach == 'eurostep': 
+            pass 
+        else: 
+            raise Exception('')
+
+        
+
+        # future idea: let users stratify by more than just internal qpo count 
 
         ### UPDATE ATTRIBUTES ###
 
@@ -181,4 +239,26 @@ class collection:
 
     ## UTILITY WRAPPERS ## 
 
+    def performance_statistics(self): 
+        self.check_loaded_evaluated('performance_statistics')
+
     ## PLOTTING WRAPPERS ## 
+
+    ## GOTCHAS ## 
+    def check_loaded(self, function:str):
+        if not self.loaded: 
+            raise Exception('collection must be loaded before '+function+'() function can be accessed') 
+    
+    def check_evaluated(self, function:str):
+        if not self.evaluated: 
+            raise Exception('collection must be evaluated before '+function+'() function can be accessed') 
+
+    def check_loaded_evaluated(self, function:str): 
+        self.check_loaded(function)
+        self.check_evaluated(function)
+
+    def dont_do_twice(self, function:str): 
+        if function=='load' and self.loaded: 
+            raise Exception('the function '+function+'() has already been executed and this step cannot be repeated on the object now')
+        elif function=='evaluate' and self.evaluated: 
+            raise Exception('the function '+function+'() has already been executed and this step cannot be repeated on the object now')  
