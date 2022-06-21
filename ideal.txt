@@ -95,3 +95,34 @@ collection.evaluate(x='qpo', y='context', model='random_forest') # or a sklearn 
 
 #### BELOW CONTAINS NEW NOTES FROM JUNE 9TH WORK SESH ####
 set verbose setting in initialization? if true (default), do progress bar during loading? 
+
+
+# function header template below: 
+    r'''
+
+    One Line Description 
+
+    Parameters
+    ----------
+
+    variable_name : type
+        Description
+
+    Returns
+    -------
+
+    variable_name : type
+        Description 
+
+    Examples
+    --------
+      >>> from astropy.table import Table, TableAttribute
+      >>> class MyTable(Table):
+      ...     identifier = TableAttribute(default=1)
+      >>> t = MyTable(identifier=10)
+      >>> t.identifier
+      10
+      >>> t.meta
+      OrderedDict([('__attributes__', {'identifier': 10})])
+      
+    '''

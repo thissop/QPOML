@@ -1,8 +1,14 @@
 {
     "cSpell.words": [
+        "eurostep",
         "FWHM",
         "iloc",
         "outliers_influence",
         "QPO"
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "qpoml"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

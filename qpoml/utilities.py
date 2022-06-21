@@ -1,5 +1,3 @@
-from __future__ import with_statement
-from dataclasses import dataclass
 import numpy as np
 import numpy 
 import pandas as pd
@@ -8,20 +6,34 @@ import warnings
 
 ### BASIC ###
 
-def normalize(x, min_value:float=None, max_value:float=None): 
-
-    if min_value==None and max_value == None: 
-        min_value = np.min(x)
-        max_value = np.max(x)
+def preprocess1d(x, preprocess): 
     
-    return (x-min_value)/(max_value-min_value), (min_value, max_value)
-
-def standardize(x, mean:float=None, sigma:float=None): 
-    if mean==None and sigma==None: 
-        mean = np.mean(x)
-        sigma = np.std(x)
+    r'''
+    preprocess : list, str
+        If it's a list, then preprocess[0] is min value for norm, and ...[1] is max value for norm 
+    '''
     
-    return (x-mean)/sigma, (mean, sigma)
+    if type(preprocess) is list: 
+        min_value = preprocess[0]
+        max_value = preprocess[1]
+        modified = (x-min_value)/(max_value-min_value) 
+    elif type(preprocess) is str: 
+        if preprocess == 'as-is': 
+            modified = x 
+        elif preprocess == 'normalize': 
+            min_value = np.min(x)
+            max_value = np.max(x)
+            modified = (x-min_value)/(max_value-min_value)
+        elif preprocess == 'standardize': 
+            mean = np.mean(x)
+            sigma = np.std(x)
+            modified = (x-mean)/sigma
+        elif preprocess == 'median': 
+            modified = x/np.median(x)
+        else: 
+            raise Exception('')
+    
+    return modified
 
 ### POST LOAD ### 
 

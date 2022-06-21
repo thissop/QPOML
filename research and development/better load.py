@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split 
 np.set_printoptions(suppress=True)
 
-def load(qpo:str, context:str, context_type:str, qpo_preprocess:dict, context_preprocess:dict, rebin:int=None): 
+def load(qpo:str, context:str, context_type:str, qpo_preprocess:dict, context_preprocess:dict, rebin:int=None, feature_range=[0.1,1]): 
     import pandas as pd 
     from collections import Counter
     from sklearn.preprocessing import OneHotEncoder   
@@ -20,6 +20,8 @@ def load(qpo:str, context:str, context_type:str, qpo_preprocess:dict, context_pr
     context_features = []
 
     observation_IDs = []
+
+    num_qpos = []
 
     context_tensor = None 
     max_length = max_simultaneous_qpos*len(qpo_features)
@@ -67,7 +69,11 @@ def load(qpo:str, context:str, context_type:str, qpo_preprocess:dict, context_pr
     for observation_ID in observation_IDs: 
         sliced_qpo_df = qpo_df.loc[qpo_df['observation_ID']==observation_ID]
         sliced_qpo_df = sliced_qpo_df.sort_values(by='frequency')
-        # sliced = sliced.iloc[[np.argsort(sliced['order'])]] if order column exists, otherwise sorted by frequency? would then need to delete order column
+
+        if 'order' in list(sliced_qpo_df): 
+            sliced_qpo_df = sliced_qpo_df.sort_values(by='order')
+            sliced_qpo_df = sliced_qpo_df.drop(columns=['order'])
+
         # keep track of reserved words 
         qpo_vector = np.array(sliced_qpo_df.drop(columns=['observation_ID'])).flatten() 
 
@@ -76,74 +82,40 @@ def load(qpo:str, context:str, context_type:str, qpo_preprocess:dict, context_pr
 
     # PREPROCESS # 
 
-    def preprocess(x:numpy.array, method, encoder=None, max_simultaneous:int=None): 
+    def preprocess(x:numpy.array, norm_bounds:numpy.array, encoder=None, max_simultaneous:int=None): 
     
         dim = x.ndim 
         if dim == 1: 
 
-            encoded_key = None
-
-            if type(method) is str: 
-
-                if method=='normalize': 
-                    min_value = np.min(x)
-                    max_value = np.max(x)
-                    x = (x-min_value)/(max_value-min_value), (min_value, max_value)
-
-                elif method == 'standardize':
-                    mean = np.mean(x)
-                    sigma = np.std(x)  
-                    x = (x-mean)/sigma
-
-                elif method == 'categorical': 
-
-                    x = x.reshape(-1,1)
-        
-                    original_classes = encoder.categories_[0]
-                    encoded_classes = encoder.transform(original_classes.reshape(-1,1)).toarray()
-                    encoded_key = {'original_classes':original_classes, 'encoded_classes':encoded_classes}
-                    x = encoder.transform(x).toarray()
-                    print(x)
-                    x = np.array([arr for arr in x]) 
-                    print(x)
-
-                elif method == 'as-is':
-                    x = x
-
-            elif type(method) is list:
-
-                min_value = method[0]
-                max_value = method[1] 
-                x = (x-min_value)/(max_value-min_value), (min_value, max_value)
+            min_value = norm_bounds[0]
+            max_value = norm_bounds[1] 
+            x = (x-min_value)/(max_value-min_value)
+            x = x*(feature_range[1] - feature_range[0]) + feature_range[0]
 
         elif dim == 2: 
 
-            num_features = len(x)
+            num_features = int(len(x)/max_simultaneous_qpos)
 
-            for i in range(max_simultaneous+1): 
+            for i in range(max_simultaneous): 
                 combined_indices = []
 
-                for j in range(0, num_features+1, num_features): 
-                    idx = i+j
+                for j in range(num_features): 
+                    idx = i+j*num_features
                     combined_indices.append(idx)
 
-                flat = x[combined_indices].flatten()
+                for idx in combined_indices: 
 
-                slice_method = method 
-                if type(method) is dict: 
-                    slice_method = method.values[i] # preprocess dictionary items need to be in same order as the values appear in csv!
-
-                for idx in combined_indices:
-                    slice = x[idx] 
-                    x[idx] = preprocess(x=slice, method=slice_method)
-
-        if type(method) is str and method=='categorical':
-            return x, encoded_key 
+                    slice = x[idx]
         
-        else: 
-            return x 
+                    min_value = norm_bounds[i][0]
+                    max_value = norm_bounds[i][1]
+                    slice = (slice-min_value)/(max_value-min_value)
+                    slice = slice*(feature_range[1] - feature_range[0]) + feature_range[0]
+                    x[idx]=slice
 
-    qpo_tensor_transposed = preprocess(np.transpose(qpo_tensor), method=qpo_preprocess, max_simultaneous=max_simultaneous_qpos)
+        return x 
+
+    qpo_tensor_transposed = preprocess(np.transpose(qpo_tensor), norm_bounds=qpo_preprocess, max_simultaneous=max_simultaneous_qpos)
     qpo_tensor = np.transpose(qpo_tensor_transposed)
 
     context_tensor_transposed = np.transpose(context_tensor)
@@ -151,22 +123,15 @@ def load(qpo:str, context:str, context_type:str, qpo_preprocess:dict, context_pr
     for idx in range(len(context_tensor_transposed)): 
         
         slice = context_tensor_transposed[idx]
-        method = context_preprocess.values()[idx]
-
-        if type(method) is str and method == 'categorical': 
-            encoder = OneHotEncoder()
-            encoder.fit(slice)
-
-            context_tensor_transposed[idx] = preprocess(slice, method=method, encoder=encoder)
-
-        else: 
-            context_tensor_transposed[idx] = preprocess(slice, method=method)
+        
+        context_tensor_transposed[idx] = preprocess(slice, norm_bounds=context_preprocess[idx])
 
     context_tensor = np.transpose(context_tensor_transposed)
 
     train_indices, test_indices = train_test_split(np.arange(0,len(qpo_tensor), 1, dtype=int)) # set args! 
 
     print(qpo_tensor)
+    quit()
     print(context_tensor)
 
 spectrum_context = './research and development/example_spectrum.csv'
@@ -175,8 +140,8 @@ qpo = './research and development/example_qpo.csv'
 
 load(qpo=qpo, 
      context=spectrum_context, 
-     context_type='spectrum', rebin=2, qpo_preprocess={'frequency':[1,20], 'width':[0,3], 'amplitude':[0,2]}, 
-     context_preprocess={'first':'normalize', 'second':'normalize'})
+     context_type='spectrum', rebin=3, qpo_preprocess=[[2,20], [0,3], [0,2]], 
+     context_preprocess=[[0,100],[0,100], [0,100]])
 
 
 

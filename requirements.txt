@@ -3,3 +3,8 @@ pandas
 matplotlib
 astropy
 sklearn
+scipy
+shap
+xgboost
+statsmodels
+seaborn 
