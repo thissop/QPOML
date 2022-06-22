@@ -45,7 +45,7 @@ def plot_pairplot(data:pandas.DataFrame, steps=False, ax=None):
         fig, ax = plt.subplots()
         internal = True 
 
-    ax = sns.pairplot(data=data, corner=steps)
+    sns.pairplot(data=data, corner=steps)
     
     if internal: 
         plt.tight_layout()

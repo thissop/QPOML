@@ -428,8 +428,6 @@ class collection:
         data = self.context_tensor 
         columns = self.context_features 
 
-        print(columns)
-
         data = pd.DataFrame(data, columns=columns)
 
         plot_correlation_matrix(data=data, ax=ax, matrix_style=matrix_style)
@@ -449,7 +447,10 @@ class collection:
         self.check_loaded('plot_dendrogram')
         from qpoml.plotting import plot_dendrogram 
 
-        data = self.dendrogram()
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns) 
 
         plot_dendrogram(data=data, ax=ax)
 

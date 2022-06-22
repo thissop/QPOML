@@ -75,6 +75,8 @@ def calculate_vif(data:pandas.DataFrame):
     
     temp = data.select_dtypes(['number'])
 
+    print(temp)
+
     vif_df = pd.DataFrame()
     vif_df['VIF'] = [vif(temp.values, i) for i in range(temp.shape[1])]
     vif_df['Column'] = list(temp)
