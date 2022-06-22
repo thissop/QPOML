@@ -1,6 +1,3 @@
-from qpoml.main import collection
-
-
 def test_load_basic(): 
     from qpoml.better_main import collection
 
@@ -32,8 +29,22 @@ def test_load_basic():
 #test_load_basic()
 
 def test_evaluation_single(): 
-    
+    from qpoml.better_main import collection
+
+    spectrum_csv = './qpoml/tests/current/references/fake_generated_spectrum.csv'
+    qpo_csv = './qpoml/tests/current/references/fake_generated_qpos.csv'
+
     collection_one = collection()
-    collection_one.load()
-    
-    pass 
+    collection_one.load(qpo_csv=qpo_csv, context_csv=spectrum_csv, context_type='spectrum', context_preprocess='median', 
+                        qpo_preprocess={'frequency':[1,16], 'width':[0.1,1.6], 'amplitude':[1,6]}, qpo_approach='single', 
+                        spectrum_approach='by-row', rebin=3)
+
+    from sklearn.ensemble import RandomForestRegressor
+
+    regr = RandomForestRegressor()
+
+    collection_one.evaluate(model=regr, model_name='RandomForestRegressor', evaluation_approach='default')
+
+    print(collection_one.performance_statistics())
+
+test_evaluation_single()

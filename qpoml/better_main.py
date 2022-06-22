@@ -38,6 +38,8 @@ class collection:
         self.all_train_indices = None # done 
         self.all_test_indices = None # done
 
+        self.qpo_approach = None # done 
+
         self.evaluated_models = None # done
         self.predictions = None # done
 
@@ -170,8 +172,6 @@ class collection:
 
         self.loaded = True 
 
-        print(qpo_tensor)
-
     ## EVALUATE ##     
     def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None): 
 
@@ -188,10 +188,8 @@ class collection:
         context_tensor = self.context_tensor
         qpo_tensor = self.qpo_tensor
 
-        
-
         if qpo_approach == 'single': 
-                
+
             all_train_indices = []
             all_test_indices = []
 
@@ -204,23 +202,23 @@ class collection:
             y_test = []
 
             if evaluation_approach == 'k-fold' and folds is not None: 
-                kf = KFold(n_splits=folds, random_state=random_state)
+                kf = KFold(n_splits=folds)
                 
-                train_indices = np.array([i for i, _ in kf.split(context_tensor, random_state=random_state)]).astype(int)
-                test_indices = np.array([i for _, i in kf.split(context_tensor, random_state=random_state)]).astype(int)
+                train_indices = np.array([i for i, _ in kf.split(context_tensor)]).astype(int)
+                test_indices = np.array([i for _, i in kf.split(context_tensor)]).astype(int)
 
                 all_train_indices.append(train_indices)
                 all_test_indices.append(test_indices)
 
                 for train_indices_fold, test_indices_fold in zip(train_indices, test_indices): 
                     X_train_fold = context_tensor[train_indices_fold]
-                    X_test_fold = context_tensor[train_indices_fold] 
+                    X_test_fold = context_tensor[test_indices_fold] 
                     y_train_fold = qpo_tensor[train_indices_fold]
                     y_test_fold = qpo_tensor[test_indices_fold]
 
                     model_fold = model 
                     model_fold.fit(X_train_fold, y_train_fold)
-                    predictions.append(model_fold.predict(X_test_fold, y_test_fold))
+                    predictions.append(model_fold.predict(X_test_fold))
                     evaluated_models.append(model_fold)
 
                     X_train.append(X_train_fold)
@@ -230,25 +228,24 @@ class collection:
 
             elif evaluation_approach == 'default': 
 
-                train_indices, test_indices = train_test_split(np.arange(0,len(qpo_tensor), 1).astype(int), random_state=random_state)
+                train_indices_fold, test_indices_fold = train_test_split(np.arange(0,len(qpo_tensor), 1).astype(int), random_state=random_state)
                 
-                all_train_indices.append(train_indices)
-                all_test_indices.append(test_indices)
+                all_train_indices.append(train_indices_fold)
+                all_test_indices.append(test_indices_fold)
 
                 X_train_fold = context_tensor[train_indices_fold]
-                X_test_fold = context_tensor[train_indices_fold] 
+                X_test_fold = context_tensor[test_indices_fold] 
                 y_train_fold = qpo_tensor[train_indices_fold]
                 y_test_fold = qpo_tensor[test_indices_fold]
 
                 model.fit(X_train_fold, y_train_fold)
-                predictions.append(model.predict(X_test_fold, y_test_fold))
+                predictions.append(model.predict(X_test_fold))
                 evaluated_models.append(model)
 
                 X_train.append(X_train_fold)
                 X_test.append(X_test_fold)
                 y_train.append(y_train_fold)
                 y_test.append(y_test_fold)
-
 
             else: 
                 raise Exception('')
@@ -277,14 +274,93 @@ class collection:
 
         ### UPDATE ATTRIBUTES ###
 
+        self.qpo_approach = qpo_approach
+
         self.evaluated = True  
 
     # SUPERFLUOUS # 
 
-    ## UTILITY WRAPPERS ## 
+    # what does sandman mean in the old slang? e.g. in hushaby song 
+
+    ## UTILITIES ## 
 
     def performance_statistics(self): 
         self.check_loaded_evaluated('performance_statistics')
+
+        from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+        statistics = {}
+
+        if self.qpo_approach=='single': 
+            predictions = self.predictions
+            y_test = self.y_test 
+
+            mae = None 
+            mse = None
+
+            if len(predictions)==1: 
+                predictions = predictions[0].flatten()
+                y_test = y_test[0].flatten()
+                mse = mean_squared_error(y_test, predictions)
+                mae = mean_absolute_error(y_test, predictions)
+
+            else: 
+                
+                mse = []
+                mae = []
+
+                for prediction, true in zip(predictions, y_test): 
+                    mse.append(mean_squared_error(true, prediction))
+                    mae.append(mean_absolute_error(true, prediction))
+                
+            statistics['mse'] = mse
+            statistics['mae'] = mae
+
+        return statistics  
+
+    ## UTILITY WRAPPERS ## 
+
+    ### POST LOAD ### 
+
+    def correlation_matrix(data:pandas.DataFrame): 
+        pass
+
+    def dendrogram(data:pandas.DataFrame):
+        pass 
+
+    def calculate_vif(data:pandas.DataFrame):
+        pass 
+
+    ### POST EVALUATION ### 
+
+    def results_regression(y_test:numpy.array, predictions:numpy.array, what:list):
+        pass 
+
+    def feature_importances(self, feature_names:list, kind:str='kernel-shap', which:int=None):
+        r'''
+        which is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from 
+        '''
+        from qpoml.utilities import feature_importances
+        self.check_evaluated('feature_importances') 
+
+        model = self.evaluated_models
+        X_test = self.X_test 
+        y_test = self.y_Test 
+
+        if self.qpo_approach == 'k-fold' and which is not None: 
+            model = model[which]
+            X_test = X_test[which]
+            y_test = y_test[which] 
+
+        else: 
+            model = model[0]
+            X_test = X_test[0]
+            y_test = y_test[0]
+
+        feature_importances_arr, feature_names, importances_df = feature_importances(model, X_test, y_test, feature_names=feature_names, kind=kind)
+        
+        return feature_importances_arr, feature_names, importances_df
+
 
     ## PLOTTING WRAPPERS ## 
 
