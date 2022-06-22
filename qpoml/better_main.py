@@ -95,6 +95,11 @@ class collection:
                 context_tensor = np.array([binned_statistic(spectral_centers, i, 'sum', bins=rebin)[0] for i in context_tensor])
                 spectral_centers, _, _ = binned_statistic(spectral_centers, spectral_centers, 'mean', bins=rebin)
 
+                temp_one = [str(i)+'_' for i in spectral_centers]
+
+                # lol this is an insane list comprehension 
+                context_features = [temp_one[index]+str(spectral_ranges[index][0])+'-'+str(spectral_ranges[index][1]) for index in range(len(spectral_centers))]
+
             ### NORMALIZE CONTEXT SPECTRUM ### 
             temp_tensor = None 
             if spectrum_approach == 'by-row' or spectrum_approach == 'as-is': 
@@ -113,6 +118,8 @@ class collection:
 
             self.spectral_ranges = spectral_ranges 
             self.spectral_centers = spectral_centers 
+
+
 
         else: 
             transposed = np.transpose(context_tensor)
@@ -173,7 +180,7 @@ class collection:
         self.loaded = True 
 
     ## EVALUATE ##     
-    def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None): 
+    def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None) -> None: 
 
         self.check_loaded('evaluate')
         self.dont_do_twice('evaluate')
@@ -322,35 +329,84 @@ class collection:
 
     ### POST LOAD ### 
 
-    def correlation_matrix(data:pandas.DataFrame): 
-        pass
+    def correlation_matrix(self): 
+        self.check_loaded('correlation_matrix')
+        from qpoml.utilities import correlation_matrix 
 
-    def dendrogram(data:pandas.DataFrame):
-        pass 
+        data = self.context_tensor
+        columns = self.context_features
 
-    def calculate_vif(data:pandas.DataFrame):
-        pass 
+        data = pd.DataFrame(data, columns=columns)
+
+        corr, cols = correlation_matrix(data=data)
+
+        return corr, cols
+
+    def dendrogram(self):
+        self.check_loaded('dendrogram')
+        from qpoml.utilities import dendrogram 
+
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns) 
+
+        corr, dist_linkage, cols = dendrogram(data=data)
+        
+        return corr, dist_linkage, cols 
+
+    def calculate_vif(self):
+        self.check_loaded('calculate_vif')
+        from qpoml.utilities import calculate_vif 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        vif_df = calculate_vif(data=data)
+
+        return vif_df 
 
     ### POST EVALUATION ### 
 
-    def results_regression(y_test:numpy.array, predictions:numpy.array, what:list):
-        pass 
+    def results_regression(self, which:list, fold:int=None):
+        from qpoml.utilities import results_regression
+        self.check_evaluated('feature_importances') 
 
-    def feature_importances(self, feature_names:list, kind:str='kernel-shap', which:int=None):
+        model = self.evaluated_models
+        predictions = self.predictions 
+        y_test = self.y_test 
+
+        if self.qpo_approach == 'k-fold' and fold is not None: 
+            model = model[fold]
+            predictions = predictions[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            predictions = predictions[0]
+            y_test = y_test[0] 
+
+        regression_x, regression_y, mb, stats = results_regression(y_test=y_test, predictions=predictions, which=which)
+
+        return regression_x, regression_y, mb, stats
+
+    def feature_importances(self, feature_names:list, kind:str='kernel-shap', fold:int=None):
         r'''
-        which is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from 
+        fold is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from 
         '''
         from qpoml.utilities import feature_importances
         self.check_evaluated('feature_importances') 
 
         model = self.evaluated_models
         X_test = self.X_test 
-        y_test = self.y_Test 
+        y_test = self.y_test 
 
-        if self.qpo_approach == 'k-fold' and which is not None: 
-            model = model[which]
-            X_test = X_test[which]
-            y_test = y_test[which] 
+        if self.qpo_approach == 'k-fold' and fold is not None: 
+            model = model[fold]
+            X_test = X_test[fold]
+            y_test = y_test[fold] 
 
         else: 
             model = model[0]
@@ -361,8 +417,99 @@ class collection:
         
         return feature_importances_arr, feature_names, importances_df
 
-
     ## PLOTTING WRAPPERS ## 
+
+    ### POST LOAD ### 
+
+    def plot_correlation_matrix(self, ax=None, matrix_style:str='default'):
+        self.check_loaded('plot_correlation_matrix')
+        from qpoml.plotting import plot_correlation_matrix
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        print(columns)
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_correlation_matrix(data=data, ax=ax, matrix_style=matrix_style)
+
+    def plot_pairplot(self, steps=False, ax=None): 
+        self.check_loaded('plot_pairplot')
+        from qpoml.plotting import plot_pairplot 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_pairplot(data=data, steps=steps, ax=ax)
+
+    def plot_dendrogram(self, ax=None): 
+        self.check_loaded('plot_dendrogram')
+        from qpoml.plotting import plot_dendrogram 
+
+        data = self.dendrogram()
+
+        plot_dendrogram(data=data, ax=ax)
+
+    def plot_vif(self, cutoff:int=10, ax=None): 
+        self.check_loaded('plot_vif')
+        from qpoml.plotting import plot_vif 
+
+        data = self.calculate_vif() 
+
+        plot_vif(data=data, cutoff=cutoff, ax=ax)
+
+    ### POST EVALUATION ### 
+
+    def plot_results_regression(self, feature_name:str, which:list, kind:str='kernel-shap', ax=None, xlim:list=[0.1,1], fold:int=None):
+        self.check_evaluated('plot_results_regression')
+        from qpoml.plotting import plot_results_regression
+
+        model = self.evaluated_models 
+        X_test = self.X_test 
+        y_test = self.y_test 
+        predictions = self.predictions 
+
+        if self.qpo_approach == 'k-fold' and fold is not None: 
+            model = model[fold]
+            predictions = predictions[fold]
+            X_test = X_test[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            predictions = predictions[0]
+            X_test = X_test[0]
+            y_test = y_test[0] 
+
+        plot_results_regression(model=model, X_test=X_test, y_test=y_test, predictions=predictions, feature_name=feature_name, which=which, kind=kind, ax=ax, xlim=xlim)
+ 
+    def plot_feature_importances(self, kind:str='kernel-shap', ax=None, fold:int=None):
+        self.check_evaluated('plot_feature_importances')
+        from qpoml.plotting import plot_feature_importances
+        
+        model = self.evaluated_models 
+        X_test = self.X_test 
+        y_test = self.y_test 
+        predictions = self.predictions 
+
+        if self.qpo_approach == 'k-fold' and fold is not None: 
+            model = model[fold]
+            predictions = predictions[fold]
+            X_test = X_test[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            predictions = predictions[0]
+            X_test = X_test[0]
+            y_test = y_test[0] 
+
+        feature_names = self.context_features
+
+        plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, ax=ax)
 
     ## GOTCHAS ## 
     def check_loaded(self, function:str):

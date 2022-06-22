@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 plt.style.use('seaborn-darkgrid')
 plt.rcParams['font.family'] = 'serif'
 
+cmap = 'bwr'
+
 ### POST LOAD ### 
 
 def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='default'):
@@ -49,7 +51,7 @@ def plot_pairplot(data:pandas.DataFrame, steps=False, ax=None):
         plt.tight_layout()
         plt.show()
 
-def plot_dendrogram(data:pandas.DataFrame): 
+def plot_dendrogram(data:pandas.DataFrame, ax=None): 
     from scipy.cluster import hierarchy
     from qpoml.utilities import dendrogram
 
@@ -66,7 +68,7 @@ def plot_dendrogram(data:pandas.DataFrame):
         plt.tight_layout()
         plt.show()
 
-def plot_vif(data:pandas.DataFrame, cutoff:int=10): 
+def plot_vif(data:pandas.DataFrame, cutoff:int=10, ax=None): 
     from qpoml.utilities import calculate_vif 
 
     internal = False 
@@ -86,10 +88,10 @@ def plot_vif(data:pandas.DataFrame, cutoff:int=10):
 
 ### POST EVALUATION ### 
 
-def plot_results_regression(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', ax=None):
+def plot_results_regression(model, X_test, y_test, predictions, feature_name:str, which:list, kind:str='kernel-shap', ax=None, xlim:list=[0.1,1]):
     from qpoml.utilities import results_regression 
     
-    regression_x, regression_y, mb, stats = results_regression(y_test=y_test, predictions=predictions, what=what)
+    regression_x, regression_y, mb, stats = results_regression(y_test=y_test, predictions=predictions, which=which)
 
     internal = False 
     if ax is None: 

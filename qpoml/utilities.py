@@ -85,7 +85,7 @@ def calculate_vif(data:pandas.DataFrame):
 
 ### POST EVALUATION ### 
 
-def results_regression(y_test:numpy.array, predictions:numpy.array, what:list): # will work best with result vectors of my design 
+def results_regression(y_test:numpy.array, predictions:numpy.array, which:list): # will work best with result vectors of my design 
     r'''
     
     Execute "results regression" on predictions based on their true values.  
@@ -99,7 +99,7 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, what:list): 
     predictions : numpy.array
         Array of predicted values 
 
-    what : list 
+    which : list 
         List of pythonic indices corresponding to the value(s) in the `y_test`/`predictions` vectors upon which `results_regression` should be run; e.g. if QPO vector is `[frequency,width,amplitude]`, `what=[0]` will run `results_regression` on frequency only because only the zeroth item in every predicted vector, the QPO frequency in this case, will be concatenated to the flattened arrays for regression. Similarly, if the QPO prediction vectors followed the form `[First QPO Frequency, First QPO Width, Second QPO Frequency, Second QPO Width]`, `what=[0,2]` would compute `results_regression` on only a concatenated array of First and Second QPO Frequencies.      
 
     Returns
