@@ -131,8 +131,10 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list,
 
         regression_x, regression_y = (i[which] for i in (regression_x, regression_y)) 
 
-        regression_x = regression_x.flatten()
-        regression_y = regression_y.flatten()
+    regression_x = regression_x.flatten()
+    regression_y = regression_y.flatten()
+
+    print(regression_x, regression_y)
 
     m, b, r, pval, stderr, intercept_stderr = linregress(regression_x, regression_y) 
 
@@ -144,11 +146,12 @@ def feature_importances(model, X_test, y_test, feature_names:list, kind:str='ker
     
     importances_df = None
     shap_values = None
-    feature_importances_arr = None 
+    feature_importances_arr = None
+    sort_idx = None 
 
     if kind=='default':
-            if hasattr(model, 'feature_importances_'): 
-                feature_importances_arr = model.feature_importances_
+        if hasattr(model, 'feature_importances_'): 
+            feature_importances_arr = model.feature_importances_
                 
     elif kind=='permutation': 
         
@@ -181,12 +184,17 @@ def feature_importances(model, X_test, y_test, feature_names:list, kind:str='ker
     if sort_idx is None: 
         sort_idx = np.argsort(feature_importances_arr)[::-1]
 
+    sort_idx = sort_idx.astype(int)
+
     feature_importances_arr = feature_importances_arr[sort_idx]
-    feature_names = feature_names[sort_idx]
+    feature_names = np.array(feature_names)[sort_idx]
 
     if kind=='tree-shap' or kind=='kernel-shap': 
-        importances_df = pd.DataFrame(shap_values, columns=feature_names[sort_idx])
+        importances_df = pd.DataFrame()
+        for index in range(len(feature_names)): 
+            importances_df[feature_names[index]] = [feature_importances_arr[index]]
 
+    print('this is really jank fix it!')
     return feature_importances_arr, feature_names, importances_df
     
 def confusion_matrix(y_test:numpy.array, predictions:numpy.array): 

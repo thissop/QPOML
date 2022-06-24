@@ -121,7 +121,7 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
         internal = True 
     
     feature_importances_arr, _, importances_df = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind)
-    if importances_df is None: 
+    if importances_df is None or kind in ['tree-shap', 'kernel-shap']: # fix this! return errs! fix that in calculate feature importances! 
         ax.barh(feature_names, feature_importances_arr)
         ax.set(xlabel='Feature Importance')
 
