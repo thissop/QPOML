@@ -51,7 +51,7 @@ def test_evaluation_single():
     #collection_one.plot_pairplot()
     #collection_one.plot_dendrogram()
     #collection_one.plot_vif()
-    collection_one.plot_results_regression(feature_name='frequency', which=[0,1])
+    #collection_one.plot_results_regression(feature_name='frequency', which=[0,1])
     collection_one.plot_feature_importances()
 
 test_evaluation_single()
