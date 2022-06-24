@@ -75,8 +75,6 @@ def calculate_vif(data:pandas.DataFrame):
     
     temp = data.select_dtypes(['number'])
 
-    print(temp)
-
     vif_df = pd.DataFrame()
     vif_df['VIF'] = [vif(temp.values, i) for i in range(temp.shape[1])]
     vif_df['Column'] = list(temp)
@@ -87,7 +85,8 @@ def calculate_vif(data:pandas.DataFrame):
 
 ### POST EVALUATION ### 
 
-def results_regression(y_test:numpy.array, predictions:numpy.array, which:list): # will work best with result vectors of my design 
+def results_regression(y_test:numpy.array, predictions:numpy.array, which:list, 
+                       regression_x:numpy.array=None, regression_y:numpy.array=None): # will work best with result vectors of my design 
     r'''
     
     Execute "results regression" on predictions based on their true values.  
@@ -126,10 +125,14 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list):
     
     from scipy.stats import linregress 
     
-    regression_x = np.transpose(np.array(y_test))
-    regression_y = np.transpose(np.array(predictions))
+    if regression_x is None and regression_y is None: 
+        regression_x = np.transpose(np.array(y_test))
+        regression_y = np.transpose(np.array(predictions))
 
-    regression_x, regression_y = (i[which] for i in (regression_x, regression_y)) 
+        regression_x, regression_y = (i[which] for i in (regression_x, regression_y)) 
+
+        regression_x = regression_x.flatten()
+        regression_y = regression_y.flatten()
 
     m, b, r, pval, stderr, intercept_stderr = linregress(regression_x, regression_y) 
 

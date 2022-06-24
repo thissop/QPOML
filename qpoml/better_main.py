@@ -458,34 +458,31 @@ class collection:
         self.check_loaded('plot_vif')
         from qpoml.plotting import plot_vif 
 
-        data = self.calculate_vif() 
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
 
         plot_vif(data=data, cutoff=cutoff, ax=ax)
 
     ### POST EVALUATION ### 
 
-    def plot_results_regression(self, feature_name:str, which:list, kind:str='kernel-shap', ax=None, xlim:list=[0.1,1], fold:int=None):
+    def plot_results_regression(self, feature_name:str, which:list, ax=None, xlim:list=[0.1,1], fold:int=None):
         self.check_evaluated('plot_results_regression')
         from qpoml.plotting import plot_results_regression
 
-        model = self.evaluated_models 
-        X_test = self.X_test 
         y_test = self.y_test 
         predictions = self.predictions 
 
         if self.qpo_approach == 'k-fold' and fold is not None: 
-            model = model[fold]
             predictions = predictions[fold]
-            X_test = X_test[fold]
             y_test = y_test[fold] 
 
         else: 
-            model = model[0]
             predictions = predictions[0]
-            X_test = X_test[0]
             y_test = y_test[0] 
 
-        plot_results_regression(model=model, X_test=X_test, y_test=y_test, predictions=predictions, feature_name=feature_name, which=which, kind=kind, ax=ax, xlim=xlim)
+        plot_results_regression(regression_x = y_test, regression_y=predictions, y_test=None, predictions=predictions, feature_name=feature_name, which=which, ax=ax, xlim=xlim)
  
     def plot_feature_importances(self, kind:str='kernel-shap', ax=None, fold:int=None):
         self.check_evaluated('plot_feature_importances')

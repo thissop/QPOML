@@ -45,13 +45,13 @@ def test_evaluation_single():
 
     collection_one.evaluate(model=regr, model_name='RandomForestRegressor', evaluation_approach='default')
 
-    print(collection_one.performance_statistics())
+    #print(collection_one.performance_statistics())
 
-    collection_one.plot_correlation_matrix()
-    collection_one.plot_pairplot()
-    collection_one.plot_dendrogram()
-    collection_one.plot_vif()
-    collection_one.plot_results_regression(feature_name='frequency', which=[0,1], kind='tree-shap')
+    #collection_one.plot_correlation_matrix()
+    #collection_one.plot_pairplot()
+    #collection_one.plot_dendrogram()
+    #collection_one.plot_vif()
+    collection_one.plot_results_regression(feature_name='frequency', which=[0,1])
     collection_one.plot_feature_importances()
 
 test_evaluation_single()

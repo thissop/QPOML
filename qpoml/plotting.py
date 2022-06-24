@@ -35,7 +35,6 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
         raise Exception('')
 
     if internal: 
-        plt.tight_layout()
         plt.show()
 
 def plot_pairplot(data:pandas.DataFrame, steps=False, ax=None): 
@@ -88,14 +87,19 @@ def plot_vif(data:pandas.DataFrame, cutoff:int=10, ax=None):
 
 ### POST EVALUATION ### 
 
-def plot_results_regression(model, X_test, y_test, predictions, feature_name:str, which:list, kind:str='kernel-shap', ax=None, xlim:list=[0.1,1]):
+def plot_results_regression(y_test, predictions, feature_name:str, which:list, ax=None, xlim:list=[0.1,1], 
+                            regression_x:numpy.array=None, regression_y:numpy.array=None):
+   
     from qpoml.utilities import results_regression 
     
-    regression_x, regression_y, mb, stats = results_regression(y_test=y_test, predictions=predictions, which=which)
-
+    if regression_x is None and regression_y is None: 
+        regression_x, regression_y, mb, stats = results_regression(y_test=y_test, predictions=predictions, which=which)
+    else: 
+        _, _, mb, stats = results_regression(regression_x=regression_x, regression_y=regression_y, which=None, y_test=None, predictions=None)
+    
     internal = False 
     if ax is None: 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots() 
         internal = True 
     
     ax.scatter(regression_x, regression_y)
