@@ -1,5 +1,5 @@
 def test_load_basic(): 
-    from qpoml.better_main import collection
+    from qpoml.main import collection
 
     spectrum_context = './research and development/example_spectrum.csv'
     scalar_context = './research and development/example_scalar.csv'
@@ -29,7 +29,7 @@ def test_load_basic():
 #test_load_basic()
 
 def test_evaluation_single(): 
-    from qpoml.better_main import collection
+    from qpoml.main import collection
 
     spectrum_csv = './qpoml/tests/current/references/fake_generated_spectrum.csv'
     qpo_csv = './qpoml/tests/current/references/fake_generated_qpos.csv'
@@ -47,11 +47,11 @@ def test_evaluation_single():
 
     #print(collection_one.performance_statistics())
 
-    #collection_one.plot_correlation_matrix()
-    #collection_one.plot_pairplot()
-    #collection_one.plot_dendrogram()
-    #collection_one.plot_vif()
+    collection_one.plot_correlation_matrix()
+    collection_one.plot_pairplot()
+    collection_one.plot_dendrogram()
+    collection_one.plot_vif()
     collection_one.plot_results_regression(feature_name='frequency', which=[0,1])
-    #collection_one.plot_feature_importances(kind='tree-shap')
+    collection_one.plot_feature_importances(kind='tree-shap')
 
 test_evaluation_single()

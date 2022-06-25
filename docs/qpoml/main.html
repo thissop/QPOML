@@ -1,0 +1,2098 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>qpoml.main API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qpoml.main</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import numpy 
+import pandas
+import warnings 
+import numpy as np
+import pandas as pd
+
+class collection: 
+
+    qpo_reserved_words = [&#39;observation_ID&#39;, &#39;order&#39;]
+
+    # REQUIRED # 
+
+    ## INITIALIZE ##
+    def __init__(self, random_state:int=42) -&gt; None:
+        
+        ### global ###
+
+        self.random_state = random_state # apply to all!
+
+        self.loaded = False # accounted for 
+        self.evaluated = False # accounted for 
+
+        self.observation_IDs = None # done 
+
+        self.context_is_spectrum = False # done 
+        self.context_tensor = None # done 
+        self.context_features = None # done 
+        self.spectral_ranges = None # done  
+        self.spectral_centers = None # done 
+        
+        self.qpo_tensor = None # done 
+        self.num_qpos = None # done 
+        self.max_simultaneous_qpos = None # done 
+        self.qpo_features = None # done 
+        self.qpo_approach = None # done 
+
+        ### EVALUATE INITIALIZED  ### 
+        self.all_train_indices = None # done 
+        self.all_test_indices = None # done
+
+        self.qpo_approach = None # done 
+
+        self.evaluated_models = None # done
+        self.predictions = None # done
+
+        self.X_train = None # done
+        self.X_test = None # done
+        self.y_train = None # done
+        self.y_test = None # done
+
+    ## LOAD ## 
+    def load(self, qpo_csv:str, context_csv:str, context_type:str, context_preprocess, qpo_preprocess:dict, qpo_approach:str=&#39;single&#39;, spectrum_approach:str=&#39;by-row&#39;, rebin:int=None) -&gt; None: 
+        
+        r&#39;&#39;&#39;
+        _Class method for loading collection object_  
+
+        Parameters
+        ----------      
+
+        qpo_csv : `str`
+            File path to correctly formatted csv file with QPO information 
+
+        context_csv : `str`
+            File path to correctly formatted csv file with context information 
+
+        context_type : `str`
+            If it is set to &#34;spectrum&#34; preprocessing will handle context input as spectrum 
+
+        context_preprocess : `dict` or `str` 
+            Fix this
+
+        qpo_preprocess : `dict` or `str`
+            Fix this
+
+        qpo_approach : `str`
+            Fix this
+
+        context_approach : `str` 
+            Fix this 
+
+        rebin : `int`
+            Defaults to `None`. If set to integer, spectrum will be rebinned such that it contains `rebin` channels.     
+
+
+        Returns
+        -------
+
+        &#39;&#39;&#39;
+
+        self.dont_do_twice(&#39;load&#39;)
+
+        from collections import Counter
+        from qpoml.utilities import preprocess1d
+
+        # check so you can do it once it&#39;s already been loaded or evaluated 
+
+        ### CONTEXT ### 
+
+        context_df = pd.read_csv(context_csv).sample(frac=1, random_state=self.random_state) # shuffle 
+        temp_df = context_df.drop(columns=[&#39;observation_ID&#39;])
+        
+        observation_IDs = list(context_df[&#39;observation_ID&#39;])
+        context_features = list(temp_df)
+        context_tensor = np.array(temp_df)
+
+        if context_type==&#39;spectrum&#39;: 
+            self.context_is_spectrum = True 
+
+            context_tensor = context_tensor.astype(float)
+            
+            spectral_ranges = []
+            spectral_centers = []
+
+            for col in context_features: 
+                col_list = col.split(&#39;_&#39;)
+                spectral_centers.append(float(col_list[0]))
+                col_list = col_list[1].split(&#39;-&#39;)
+                spectral_ranges.append((col_list[0], col_list[1]))
+
+            if rebin is not None: 
+
+                from scipy.stats import binned_statistic
+                
+                lows = [i[0] for i in spectral_ranges]
+                highs = [i[1] for i in spectral_ranges]
+
+                rebinned_lows, _, _ = binned_statistic(spectral_centers, lows, &#39;min&#39;, bins=rebin)
+                rebinned_highs, _, _  = binned_statistic(spectral_centers, highs, &#39;max&#39;, bins=rebin)
+
+                spectral_ranges = [[i, j] for i,j in zip(rebinned_lows, rebinned_highs)]
+                context_tensor = np.array([binned_statistic(spectral_centers, i, &#39;sum&#39;, bins=rebin)[0] for i in context_tensor])
+                spectral_centers, _, _ = binned_statistic(spectral_centers, spectral_centers, &#39;mean&#39;, bins=rebin)
+
+                temp_one = [str(i)+&#39;_&#39; for i in spectral_centers]
+
+                # lol this is an insane list comprehension 
+                context_features = [temp_one[index]+str(spectral_ranges[index][0])+&#39;-&#39;+str(spectral_ranges[index][1]) for index in range(len(spectral_centers))]
+
+            ### NORMALIZE CONTEXT SPECTRUM ### 
+            temp_tensor = None 
+            if spectrum_approach == &#39;by-row&#39; or spectrum_approach == &#39;as-is&#39;: 
+                temp_tensor = context_tensor 
+            elif spectrum_approach == &#39;by-column&#39;: 
+                temp_tensor = np.transpose(context_tensor)
+            else: 
+                raise Exception(&#39;&#39;)
+            for index, arr in enumerate(temp_tensor): 
+                    arr = preprocess1d(arr, context_preprocess)
+                    temp_tensor[index] = arr 
+            if spectrum_approach == &#39;by-column&#39;: 
+                context_tensor = np.transpose(temp_tensor)
+            else: 
+                context_tensor = temp_tensor 
+
+            self.spectral_ranges = spectral_ranges 
+            self.spectral_centers = spectral_centers 
+
+        else: 
+            transposed = np.transpose(context_tensor)
+            for index, arr in enumerate(transposed): 
+                arr = preprocess1d(arr, context_preprocess[context_features[index]])
+                transposed[index] = arr 
+            
+            context_tensor = np.transpose(transposed)
+
+        ### QPO ### 
+
+        num_qpos = []
+
+        qpo_df = pd.read_csv(qpo_csv)
+        qpo_features = [i for i in list(qpo_df) if i not in self.qpo_reserved_words]
+
+        max_simultaneous_qpos = Counter(qpo_df[&#39;observation_ID&#39;]).most_common(1)[0][1]
+        max_length = max_simultaneous_qpos*len(qpo_features)
+        qpo_tensor = []
+
+        for qpo_feature in qpo_features: 
+            if qpo_feature not in self.qpo_reserved_words: # reserved QPO words 
+                qpo_df[qpo_feature] = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
+
+        for observation_ID in observation_IDs: 
+            sliced_qpo_df = qpo_df.loc[qpo_df[&#39;observation_ID&#39;]==observation_ID]
+            sliced_qpo_df = sliced_qpo_df.sort_values(by=&#39;frequency&#39;)
+
+            num_qpos.append(len(sliced_qpo_df.index))
+
+            if &#39;order&#39; in list(sliced_qpo_df): 
+                sliced_qpo_df = sliced_qpo_df.sort_values(by=&#39;order&#39;)
+                sliced_qpo_df = sliced_qpo_df.drop(columns=[&#39;order&#39;])
+
+            # keep track of reserved words 
+            qpo_vector = np.array(sliced_qpo_df.drop(columns=[&#39;observation_ID&#39;])).flatten() 
+
+            qpo_tensor.append(qpo_vector)
+
+        if qpo_approach == &#39;single&#39;: 
+            # pad with zeros  
+            for index, arr in enumerate(qpo_tensor): 
+                arr = np.concatenate((arr, np.zeros(shape=max_length-len(arr)))) 
+                qpo_tensor[index] = arr 
+
+        qpo_tensor = np.array(qpo_tensor, dtype=object)
+
+        ### UPDATE ATTRIBUTES ### 
+        self.observation_IDs = observation_IDs 
+        self.num_qpos = num_qpos 
+        self.context_tensor = context_tensor 
+        self.qpo_tensor = qpo_tensor 
+        self.max_simultaneous_qpos = max_simultaneous_qpos
+        self.qpo_approach = qpo_approach
+        self.context_features = context_features 
+        self.qpo_features = qpo_features 
+
+        self.loaded = True 
+
+    ## EVALUATE ##     
+    def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None) -&gt; None: 
+        r&#39;&#39;&#39;
+        _Evaluate an already initiated and loaded model_  
+
+        Parameters
+        ----------      
+
+        model : `object`
+            A initialized regressor object from another class, e.g. sklearn
+
+        model_name : `str` 
+            The name of the model, e.g. &#39;AdaBoostRegressor&#39;
+
+        evaluation_approach : `str`
+            Can be `eurostep` or `single` ... Fix this! 
+
+        test_proportion : `float`
+            Default is `0.1`; proportion of values to reserve for test set 
+
+        folds : `int`
+            Default is `None`; if set to some integer, the model will be validated via K-Fold validation, with `K=folds`
+
+        Returns
+        -------
+        &#39;&#39;&#39;
+
+        self.check_loaded(&#39;evaluate&#39;)
+        self.dont_do_twice(&#39;evaluate&#39;)
+
+        from sklearn.model_selection import KFold 
+        from sklearn.model_selection import train_test_split 
+
+        random_state = self.random_state
+
+        qpo_approach = self.qpo_approach 
+
+        context_tensor = self.context_tensor
+        qpo_tensor = self.qpo_tensor
+
+        if qpo_approach == &#39;single&#39;: 
+
+            all_train_indices = []
+            all_test_indices = []
+
+            evaluated_models = [] 
+            predictions = [] 
+
+            X_train = []
+            X_test = []
+            y_train = []
+            y_test = []
+
+            if evaluation_approach == &#39;k-fold&#39; and folds is not None: 
+                kf = KFold(n_splits=folds)
+                
+                train_indices = np.array([i for i, _ in kf.split(context_tensor)]).astype(int)
+                test_indices = np.array([i for _, i in kf.split(context_tensor)]).astype(int)
+
+                all_train_indices.append(train_indices)
+                all_test_indices.append(test_indices)
+
+                for train_indices_fold, test_indices_fold in zip(train_indices, test_indices): 
+                    X_train_fold = context_tensor[train_indices_fold]
+                    X_test_fold = context_tensor[test_indices_fold] 
+                    y_train_fold = qpo_tensor[train_indices_fold]
+                    y_test_fold = qpo_tensor[test_indices_fold]
+
+                    model_fold = model 
+                    model_fold.fit(X_train_fold, y_train_fold)
+                    predictions.append(model_fold.predict(X_test_fold))
+                    evaluated_models.append(model_fold)
+
+                    X_train.append(X_train_fold)
+                    X_test.append(X_test_fold)
+                    y_train.append(y_train_fold)
+                    y_test.append(y_test_fold)
+
+            elif evaluation_approach == &#39;default&#39;: 
+
+                train_indices_fold, test_indices_fold = train_test_split(np.arange(0,len(qpo_tensor), 1).astype(int), random_state=random_state)
+                
+                all_train_indices.append(train_indices_fold)
+                all_test_indices.append(test_indices_fold)
+
+                X_train_fold = context_tensor[train_indices_fold]
+                X_test_fold = context_tensor[test_indices_fold] 
+                y_train_fold = qpo_tensor[train_indices_fold]
+                y_test_fold = qpo_tensor[test_indices_fold]
+
+                model.fit(X_train_fold, y_train_fold)
+                predictions.append(model.predict(X_test_fold))
+                evaluated_models.append(model)
+
+                X_train.append(X_train_fold)
+                X_test.append(X_test_fold)
+                y_train.append(y_train_fold)
+                y_test.append(y_test_fold)
+
+            else: 
+                raise Exception(&#39;&#39;)
+
+            self.all_train_indices = all_train_indices
+            self.all_test_indices = all_test_indices
+
+            self.evaluated_models = evaluated_models 
+            self.predictions = predictions 
+
+            self.X_train = X_train
+            self.X_test = X_test
+            self.y_train = y_train
+            self.y_test = y_test
+
+
+        elif qpo_approach == &#39;eurostep&#39;: 
+            pass 
+        
+        else: 
+            raise Exception(&#39;&#39;)
+
+        
+
+        # future idea: let users stratify by more than just internal qpo count 
+
+        ### UPDATE ATTRIBUTES ###
+
+        self.qpo_approach = qpo_approach
+
+        self.evaluated = True  
+
+    # SUPERFLUOUS # 
+
+    # what does sandman mean in the old slang? e.g. in hushaby song 
+
+    ## UTILITIES ## 
+
+    def performance_statistics(self): 
+        r&#39;&#39;&#39;
+        _Return model performance statistics_  
+
+        Parameters
+        ----------      
+
+        Returns
+        -------
+
+        statistics : `dict`
+            Dictionary of performance statistics. Currently contains `mae` and `mse` 
+        &#39;&#39;&#39;
+
+        self.check_loaded_evaluated(&#39;performance_statistics&#39;)
+
+        from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+        statistics = {}
+
+        if self.qpo_approach==&#39;single&#39;: 
+            predictions = self.predictions
+            y_test = self.y_test 
+
+            mae = None 
+            mse = None
+
+            if len(predictions)==1: 
+                predictions = predictions[0].flatten()
+                y_test = y_test[0].flatten()
+                mse = mean_squared_error(y_test, predictions)
+                mae = mean_absolute_error(y_test, predictions)
+
+            else: 
+                
+                mse = []
+                mae = []
+
+                for prediction, true in zip(predictions, y_test): 
+                    mse.append(mean_squared_error(true, prediction))
+                    mae.append(mean_absolute_error(true, prediction))
+                
+            statistics[&#39;mse&#39;] = mse
+            statistics[&#39;mae&#39;] = mae
+
+        return statistics  
+
+    ## UTILITY WRAPPERS ## 
+
+    ### POST LOAD ### 
+
+    def correlation_matrix(self): 
+        r&#39;&#39;&#39;
+        _Class wrapper to `utils.correlation_matrix`_  
+
+        Parameters
+        ----------      
+
+        Returns
+        -------
+
+        fix after adding to utils correlation matrix docs! 
+        &#39;&#39;&#39;
+
+        self.check_loaded(&#39;correlation_matrix&#39;)
+        from qpoml.utilities import correlation_matrix 
+
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns)
+
+        corr, cols = correlation_matrix(data=data)
+
+        return corr, cols
+
+    def dendrogram(self):
+        self.check_loaded(&#39;dendrogram&#39;)
+        from qpoml.utilities import dendrogram 
+
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns) 
+
+        corr, dist_linkage, cols = dendrogram(data=data)
+        
+        return corr, dist_linkage, cols 
+
+    def calculate_vif(self):
+        self.check_loaded(&#39;calculate_vif&#39;)
+        from qpoml.utilities import calculate_vif 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        vif_df = calculate_vif(data=data)
+
+        return vif_df 
+
+    ### POST EVALUATION ### 
+
+    def results_regression(self, which:list, fold:int=None):
+        from qpoml.utilities import results_regression
+        self.check_evaluated(&#39;feature_importances&#39;) 
+
+        model = self.evaluated_models
+        predictions = self.predictions 
+        y_test = self.y_test 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            model = model[fold]
+            predictions = predictions[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            predictions = predictions[0]
+            y_test = y_test[0] 
+
+        regression_x, regression_y, mb, stats = results_regression(regression_x=y_test, regression_y=predictions, which=which)
+
+        return regression_x, regression_y, mb, stats
+
+    def feature_importances(self, feature_names:list, kind:str=&#39;kernel-shap&#39;, fold:int=None):
+        r&#39;&#39;&#39;
+        fold is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from 
+        &#39;&#39;&#39;
+        from qpoml.utilities import feature_importances
+        self.check_evaluated(&#39;feature_importances&#39;) 
+
+        model = self.evaluated_models
+        X_test = self.X_test 
+        y_test = self.y_test 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            model = model[fold]
+            X_test = X_test[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            X_test = X_test[0]
+            y_test = y_test[0]
+
+        feature_importances_arr, feature_names, importances_df = feature_importances(model, X_test, y_test, feature_names=feature_names, kind=kind)
+        
+        return feature_importances_arr, feature_names, importances_df
+
+    ## PLOTTING WRAPPERS ## 
+
+    ### POST LOAD ### 
+
+    def plot_correlation_matrix(self, ax=None, matrix_style:str=&#39;default&#39;):
+        self.check_loaded(&#39;plot_correlation_matrix&#39;)
+        from qpoml.plotting import plot_correlation_matrix
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_correlation_matrix(data=data, ax=ax, matrix_style=matrix_style)
+
+    def plot_pairplot(self, steps=False, ax=None): 
+        self.check_loaded(&#39;plot_pairplot&#39;)
+        from qpoml.plotting import plot_pairplot 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_pairplot(data=data, steps=steps, ax=ax)
+
+    def plot_dendrogram(self, ax=None): 
+        self.check_loaded(&#39;plot_dendrogram&#39;)
+        from qpoml.plotting import plot_dendrogram 
+
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns) 
+
+        plot_dendrogram(data=data, ax=ax)
+
+    def plot_vif(self, cutoff:int=10, ax=None): 
+        self.check_loaded(&#39;plot_vif&#39;)
+        from qpoml.plotting import plot_vif 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_vif(data=data, cutoff=cutoff, ax=ax)
+
+    ### POST EVALUATION ### 
+
+    def plot_results_regression(self, feature_name:str, which:list, ax=None, xlim:list=[-0.1,1.1], fold:int=None):
+        self.check_evaluated(&#39;plot_results_regression&#39;)
+        from qpoml.plotting import plot_results_regression
+
+        y_test = self.y_test 
+        predictions = self.predictions 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            predictions = predictions[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            predictions = predictions[0]
+            y_test = y_test[0] 
+
+        plot_results_regression(regression_x = y_test, regression_y=predictions, y_test=None, predictions=predictions, feature_name=feature_name, which=which, ax=ax, xlim=xlim)
+ 
+    def plot_feature_importances(self, kind:str=&#39;kernel-shap&#39;, ax=None, fold:int=None):
+        self.check_evaluated(&#39;plot_feature_importances&#39;)
+        from qpoml.plotting import plot_feature_importances
+        
+        model = self.evaluated_models 
+        X_test = self.X_test 
+        y_test = self.y_test 
+        predictions = self.predictions 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            model = model[fold]
+            predictions = predictions[fold]
+            X_test = X_test[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            predictions = predictions[0]
+            X_test = X_test[0]
+            y_test = y_test[0] 
+
+        feature_names = self.context_features
+
+        plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, ax=ax)
+
+    ## GOTCHAS ## 
+    def check_loaded(self, function:str):
+        if not self.loaded: 
+            raise Exception(&#39;collection must be loaded before &#39;+function+&#39;() function can be accessed&#39;) 
+    
+    def check_evaluated(self, function:str):
+        if not self.evaluated: 
+            raise Exception(&#39;collection must be evaluated before &#39;+function+&#39;() function can be accessed&#39;) 
+
+    def check_loaded_evaluated(self, function:str): 
+        self.check_loaded(function)
+        self.check_evaluated(function)
+
+    def dont_do_twice(self, function:str): 
+        if function==&#39;load&#39; and self.loaded: 
+            raise Exception(&#39;the function &#39;+function+&#39;() has already been executed and this step cannot be repeated on the object now&#39;)
+        elif function==&#39;evaluate&#39; and self.evaluated: 
+            raise Exception(&#39;the function &#39;+function+&#39;() has already been executed and this step cannot be repeated on the object now&#39;)  </code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="qpoml.main.collection"><code class="flex name class">
+<span>class <span class="ident">collection</span></span>
+<span>(</span><span>random_state: int = 42)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class collection: 
+
+    qpo_reserved_words = [&#39;observation_ID&#39;, &#39;order&#39;]
+
+    # REQUIRED # 
+
+    ## INITIALIZE ##
+    def __init__(self, random_state:int=42) -&gt; None:
+        
+        ### global ###
+
+        self.random_state = random_state # apply to all!
+
+        self.loaded = False # accounted for 
+        self.evaluated = False # accounted for 
+
+        self.observation_IDs = None # done 
+
+        self.context_is_spectrum = False # done 
+        self.context_tensor = None # done 
+        self.context_features = None # done 
+        self.spectral_ranges = None # done  
+        self.spectral_centers = None # done 
+        
+        self.qpo_tensor = None # done 
+        self.num_qpos = None # done 
+        self.max_simultaneous_qpos = None # done 
+        self.qpo_features = None # done 
+        self.qpo_approach = None # done 
+
+        ### EVALUATE INITIALIZED  ### 
+        self.all_train_indices = None # done 
+        self.all_test_indices = None # done
+
+        self.qpo_approach = None # done 
+
+        self.evaluated_models = None # done
+        self.predictions = None # done
+
+        self.X_train = None # done
+        self.X_test = None # done
+        self.y_train = None # done
+        self.y_test = None # done
+
+    ## LOAD ## 
+    def load(self, qpo_csv:str, context_csv:str, context_type:str, context_preprocess, qpo_preprocess:dict, qpo_approach:str=&#39;single&#39;, spectrum_approach:str=&#39;by-row&#39;, rebin:int=None) -&gt; None: 
+        
+        r&#39;&#39;&#39;
+        _Class method for loading collection object_  
+
+        Parameters
+        ----------      
+
+        qpo_csv : `str`
+            File path to correctly formatted csv file with QPO information 
+
+        context_csv : `str`
+            File path to correctly formatted csv file with context information 
+
+        context_type : `str`
+            If it is set to &#34;spectrum&#34; preprocessing will handle context input as spectrum 
+
+        context_preprocess : `dict` or `str` 
+            Fix this
+
+        qpo_preprocess : `dict` or `str`
+            Fix this
+
+        qpo_approach : `str`
+            Fix this
+
+        context_approach : `str` 
+            Fix this 
+
+        rebin : `int`
+            Defaults to `None`. If set to integer, spectrum will be rebinned such that it contains `rebin` channels.     
+
+
+        Returns
+        -------
+
+        &#39;&#39;&#39;
+
+        self.dont_do_twice(&#39;load&#39;)
+
+        from collections import Counter
+        from qpoml.utilities import preprocess1d
+
+        # check so you can do it once it&#39;s already been loaded or evaluated 
+
+        ### CONTEXT ### 
+
+        context_df = pd.read_csv(context_csv).sample(frac=1, random_state=self.random_state) # shuffle 
+        temp_df = context_df.drop(columns=[&#39;observation_ID&#39;])
+        
+        observation_IDs = list(context_df[&#39;observation_ID&#39;])
+        context_features = list(temp_df)
+        context_tensor = np.array(temp_df)
+
+        if context_type==&#39;spectrum&#39;: 
+            self.context_is_spectrum = True 
+
+            context_tensor = context_tensor.astype(float)
+            
+            spectral_ranges = []
+            spectral_centers = []
+
+            for col in context_features: 
+                col_list = col.split(&#39;_&#39;)
+                spectral_centers.append(float(col_list[0]))
+                col_list = col_list[1].split(&#39;-&#39;)
+                spectral_ranges.append((col_list[0], col_list[1]))
+
+            if rebin is not None: 
+
+                from scipy.stats import binned_statistic
+                
+                lows = [i[0] for i in spectral_ranges]
+                highs = [i[1] for i in spectral_ranges]
+
+                rebinned_lows, _, _ = binned_statistic(spectral_centers, lows, &#39;min&#39;, bins=rebin)
+                rebinned_highs, _, _  = binned_statistic(spectral_centers, highs, &#39;max&#39;, bins=rebin)
+
+                spectral_ranges = [[i, j] for i,j in zip(rebinned_lows, rebinned_highs)]
+                context_tensor = np.array([binned_statistic(spectral_centers, i, &#39;sum&#39;, bins=rebin)[0] for i in context_tensor])
+                spectral_centers, _, _ = binned_statistic(spectral_centers, spectral_centers, &#39;mean&#39;, bins=rebin)
+
+                temp_one = [str(i)+&#39;_&#39; for i in spectral_centers]
+
+                # lol this is an insane list comprehension 
+                context_features = [temp_one[index]+str(spectral_ranges[index][0])+&#39;-&#39;+str(spectral_ranges[index][1]) for index in range(len(spectral_centers))]
+
+            ### NORMALIZE CONTEXT SPECTRUM ### 
+            temp_tensor = None 
+            if spectrum_approach == &#39;by-row&#39; or spectrum_approach == &#39;as-is&#39;: 
+                temp_tensor = context_tensor 
+            elif spectrum_approach == &#39;by-column&#39;: 
+                temp_tensor = np.transpose(context_tensor)
+            else: 
+                raise Exception(&#39;&#39;)
+            for index, arr in enumerate(temp_tensor): 
+                    arr = preprocess1d(arr, context_preprocess)
+                    temp_tensor[index] = arr 
+            if spectrum_approach == &#39;by-column&#39;: 
+                context_tensor = np.transpose(temp_tensor)
+            else: 
+                context_tensor = temp_tensor 
+
+            self.spectral_ranges = spectral_ranges 
+            self.spectral_centers = spectral_centers 
+
+        else: 
+            transposed = np.transpose(context_tensor)
+            for index, arr in enumerate(transposed): 
+                arr = preprocess1d(arr, context_preprocess[context_features[index]])
+                transposed[index] = arr 
+            
+            context_tensor = np.transpose(transposed)
+
+        ### QPO ### 
+
+        num_qpos = []
+
+        qpo_df = pd.read_csv(qpo_csv)
+        qpo_features = [i for i in list(qpo_df) if i not in self.qpo_reserved_words]
+
+        max_simultaneous_qpos = Counter(qpo_df[&#39;observation_ID&#39;]).most_common(1)[0][1]
+        max_length = max_simultaneous_qpos*len(qpo_features)
+        qpo_tensor = []
+
+        for qpo_feature in qpo_features: 
+            if qpo_feature not in self.qpo_reserved_words: # reserved QPO words 
+                qpo_df[qpo_feature] = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
+
+        for observation_ID in observation_IDs: 
+            sliced_qpo_df = qpo_df.loc[qpo_df[&#39;observation_ID&#39;]==observation_ID]
+            sliced_qpo_df = sliced_qpo_df.sort_values(by=&#39;frequency&#39;)
+
+            num_qpos.append(len(sliced_qpo_df.index))
+
+            if &#39;order&#39; in list(sliced_qpo_df): 
+                sliced_qpo_df = sliced_qpo_df.sort_values(by=&#39;order&#39;)
+                sliced_qpo_df = sliced_qpo_df.drop(columns=[&#39;order&#39;])
+
+            # keep track of reserved words 
+            qpo_vector = np.array(sliced_qpo_df.drop(columns=[&#39;observation_ID&#39;])).flatten() 
+
+            qpo_tensor.append(qpo_vector)
+
+        if qpo_approach == &#39;single&#39;: 
+            # pad with zeros  
+            for index, arr in enumerate(qpo_tensor): 
+                arr = np.concatenate((arr, np.zeros(shape=max_length-len(arr)))) 
+                qpo_tensor[index] = arr 
+
+        qpo_tensor = np.array(qpo_tensor, dtype=object)
+
+        ### UPDATE ATTRIBUTES ### 
+        self.observation_IDs = observation_IDs 
+        self.num_qpos = num_qpos 
+        self.context_tensor = context_tensor 
+        self.qpo_tensor = qpo_tensor 
+        self.max_simultaneous_qpos = max_simultaneous_qpos
+        self.qpo_approach = qpo_approach
+        self.context_features = context_features 
+        self.qpo_features = qpo_features 
+
+        self.loaded = True 
+
+    ## EVALUATE ##     
+    def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None) -&gt; None: 
+        r&#39;&#39;&#39;
+        _Evaluate an already initiated and loaded model_  
+
+        Parameters
+        ----------      
+
+        model : `object`
+            A initialized regressor object from another class, e.g. sklearn
+
+        model_name : `str` 
+            The name of the model, e.g. &#39;AdaBoostRegressor&#39;
+
+        evaluation_approach : `str`
+            Can be `eurostep` or `single` ... Fix this! 
+
+        test_proportion : `float`
+            Default is `0.1`; proportion of values to reserve for test set 
+
+        folds : `int`
+            Default is `None`; if set to some integer, the model will be validated via K-Fold validation, with `K=folds`
+
+        Returns
+        -------
+        &#39;&#39;&#39;
+
+        self.check_loaded(&#39;evaluate&#39;)
+        self.dont_do_twice(&#39;evaluate&#39;)
+
+        from sklearn.model_selection import KFold 
+        from sklearn.model_selection import train_test_split 
+
+        random_state = self.random_state
+
+        qpo_approach = self.qpo_approach 
+
+        context_tensor = self.context_tensor
+        qpo_tensor = self.qpo_tensor
+
+        if qpo_approach == &#39;single&#39;: 
+
+            all_train_indices = []
+            all_test_indices = []
+
+            evaluated_models = [] 
+            predictions = [] 
+
+            X_train = []
+            X_test = []
+            y_train = []
+            y_test = []
+
+            if evaluation_approach == &#39;k-fold&#39; and folds is not None: 
+                kf = KFold(n_splits=folds)
+                
+                train_indices = np.array([i for i, _ in kf.split(context_tensor)]).astype(int)
+                test_indices = np.array([i for _, i in kf.split(context_tensor)]).astype(int)
+
+                all_train_indices.append(train_indices)
+                all_test_indices.append(test_indices)
+
+                for train_indices_fold, test_indices_fold in zip(train_indices, test_indices): 
+                    X_train_fold = context_tensor[train_indices_fold]
+                    X_test_fold = context_tensor[test_indices_fold] 
+                    y_train_fold = qpo_tensor[train_indices_fold]
+                    y_test_fold = qpo_tensor[test_indices_fold]
+
+                    model_fold = model 
+                    model_fold.fit(X_train_fold, y_train_fold)
+                    predictions.append(model_fold.predict(X_test_fold))
+                    evaluated_models.append(model_fold)
+
+                    X_train.append(X_train_fold)
+                    X_test.append(X_test_fold)
+                    y_train.append(y_train_fold)
+                    y_test.append(y_test_fold)
+
+            elif evaluation_approach == &#39;default&#39;: 
+
+                train_indices_fold, test_indices_fold = train_test_split(np.arange(0,len(qpo_tensor), 1).astype(int), random_state=random_state)
+                
+                all_train_indices.append(train_indices_fold)
+                all_test_indices.append(test_indices_fold)
+
+                X_train_fold = context_tensor[train_indices_fold]
+                X_test_fold = context_tensor[test_indices_fold] 
+                y_train_fold = qpo_tensor[train_indices_fold]
+                y_test_fold = qpo_tensor[test_indices_fold]
+
+                model.fit(X_train_fold, y_train_fold)
+                predictions.append(model.predict(X_test_fold))
+                evaluated_models.append(model)
+
+                X_train.append(X_train_fold)
+                X_test.append(X_test_fold)
+                y_train.append(y_train_fold)
+                y_test.append(y_test_fold)
+
+            else: 
+                raise Exception(&#39;&#39;)
+
+            self.all_train_indices = all_train_indices
+            self.all_test_indices = all_test_indices
+
+            self.evaluated_models = evaluated_models 
+            self.predictions = predictions 
+
+            self.X_train = X_train
+            self.X_test = X_test
+            self.y_train = y_train
+            self.y_test = y_test
+
+
+        elif qpo_approach == &#39;eurostep&#39;: 
+            pass 
+        
+        else: 
+            raise Exception(&#39;&#39;)
+
+        
+
+        # future idea: let users stratify by more than just internal qpo count 
+
+        ### UPDATE ATTRIBUTES ###
+
+        self.qpo_approach = qpo_approach
+
+        self.evaluated = True  
+
+    # SUPERFLUOUS # 
+
+    # what does sandman mean in the old slang? e.g. in hushaby song 
+
+    ## UTILITIES ## 
+
+    def performance_statistics(self): 
+        r&#39;&#39;&#39;
+        _Return model performance statistics_  
+
+        Parameters
+        ----------      
+
+        Returns
+        -------
+
+        statistics : `dict`
+            Dictionary of performance statistics. Currently contains `mae` and `mse` 
+        &#39;&#39;&#39;
+
+        self.check_loaded_evaluated(&#39;performance_statistics&#39;)
+
+        from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+        statistics = {}
+
+        if self.qpo_approach==&#39;single&#39;: 
+            predictions = self.predictions
+            y_test = self.y_test 
+
+            mae = None 
+            mse = None
+
+            if len(predictions)==1: 
+                predictions = predictions[0].flatten()
+                y_test = y_test[0].flatten()
+                mse = mean_squared_error(y_test, predictions)
+                mae = mean_absolute_error(y_test, predictions)
+
+            else: 
+                
+                mse = []
+                mae = []
+
+                for prediction, true in zip(predictions, y_test): 
+                    mse.append(mean_squared_error(true, prediction))
+                    mae.append(mean_absolute_error(true, prediction))
+                
+            statistics[&#39;mse&#39;] = mse
+            statistics[&#39;mae&#39;] = mae
+
+        return statistics  
+
+    ## UTILITY WRAPPERS ## 
+
+    ### POST LOAD ### 
+
+    def correlation_matrix(self): 
+        r&#39;&#39;&#39;
+        _Class wrapper to `utils.correlation_matrix`_  
+
+        Parameters
+        ----------      
+
+        Returns
+        -------
+
+        fix after adding to utils correlation matrix docs! 
+        &#39;&#39;&#39;
+
+        self.check_loaded(&#39;correlation_matrix&#39;)
+        from qpoml.utilities import correlation_matrix 
+
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns)
+
+        corr, cols = correlation_matrix(data=data)
+
+        return corr, cols
+
+    def dendrogram(self):
+        self.check_loaded(&#39;dendrogram&#39;)
+        from qpoml.utilities import dendrogram 
+
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns) 
+
+        corr, dist_linkage, cols = dendrogram(data=data)
+        
+        return corr, dist_linkage, cols 
+
+    def calculate_vif(self):
+        self.check_loaded(&#39;calculate_vif&#39;)
+        from qpoml.utilities import calculate_vif 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        vif_df = calculate_vif(data=data)
+
+        return vif_df 
+
+    ### POST EVALUATION ### 
+
+    def results_regression(self, which:list, fold:int=None):
+        from qpoml.utilities import results_regression
+        self.check_evaluated(&#39;feature_importances&#39;) 
+
+        model = self.evaluated_models
+        predictions = self.predictions 
+        y_test = self.y_test 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            model = model[fold]
+            predictions = predictions[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            predictions = predictions[0]
+            y_test = y_test[0] 
+
+        regression_x, regression_y, mb, stats = results_regression(regression_x=y_test, regression_y=predictions, which=which)
+
+        return regression_x, regression_y, mb, stats
+
+    def feature_importances(self, feature_names:list, kind:str=&#39;kernel-shap&#39;, fold:int=None):
+        r&#39;&#39;&#39;
+        fold is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from 
+        &#39;&#39;&#39;
+        from qpoml.utilities import feature_importances
+        self.check_evaluated(&#39;feature_importances&#39;) 
+
+        model = self.evaluated_models
+        X_test = self.X_test 
+        y_test = self.y_test 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            model = model[fold]
+            X_test = X_test[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            X_test = X_test[0]
+            y_test = y_test[0]
+
+        feature_importances_arr, feature_names, importances_df = feature_importances(model, X_test, y_test, feature_names=feature_names, kind=kind)
+        
+        return feature_importances_arr, feature_names, importances_df
+
+    ## PLOTTING WRAPPERS ## 
+
+    ### POST LOAD ### 
+
+    def plot_correlation_matrix(self, ax=None, matrix_style:str=&#39;default&#39;):
+        self.check_loaded(&#39;plot_correlation_matrix&#39;)
+        from qpoml.plotting import plot_correlation_matrix
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_correlation_matrix(data=data, ax=ax, matrix_style=matrix_style)
+
+    def plot_pairplot(self, steps=False, ax=None): 
+        self.check_loaded(&#39;plot_pairplot&#39;)
+        from qpoml.plotting import plot_pairplot 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_pairplot(data=data, steps=steps, ax=ax)
+
+    def plot_dendrogram(self, ax=None): 
+        self.check_loaded(&#39;plot_dendrogram&#39;)
+        from qpoml.plotting import plot_dendrogram 
+
+        data = self.context_tensor
+        columns = self.context_features
+
+        data = pd.DataFrame(data, columns=columns) 
+
+        plot_dendrogram(data=data, ax=ax)
+
+    def plot_vif(self, cutoff:int=10, ax=None): 
+        self.check_loaded(&#39;plot_vif&#39;)
+        from qpoml.plotting import plot_vif 
+
+        data = self.context_tensor 
+        columns = self.context_features 
+
+        data = pd.DataFrame(data, columns=columns)
+
+        plot_vif(data=data, cutoff=cutoff, ax=ax)
+
+    ### POST EVALUATION ### 
+
+    def plot_results_regression(self, feature_name:str, which:list, ax=None, xlim:list=[-0.1,1.1], fold:int=None):
+        self.check_evaluated(&#39;plot_results_regression&#39;)
+        from qpoml.plotting import plot_results_regression
+
+        y_test = self.y_test 
+        predictions = self.predictions 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            predictions = predictions[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            predictions = predictions[0]
+            y_test = y_test[0] 
+
+        plot_results_regression(regression_x = y_test, regression_y=predictions, y_test=None, predictions=predictions, feature_name=feature_name, which=which, ax=ax, xlim=xlim)
+ 
+    def plot_feature_importances(self, kind:str=&#39;kernel-shap&#39;, ax=None, fold:int=None):
+        self.check_evaluated(&#39;plot_feature_importances&#39;)
+        from qpoml.plotting import plot_feature_importances
+        
+        model = self.evaluated_models 
+        X_test = self.X_test 
+        y_test = self.y_test 
+        predictions = self.predictions 
+
+        if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+            model = model[fold]
+            predictions = predictions[fold]
+            X_test = X_test[fold]
+            y_test = y_test[fold] 
+
+        else: 
+            model = model[0]
+            predictions = predictions[0]
+            X_test = X_test[0]
+            y_test = y_test[0] 
+
+        feature_names = self.context_features
+
+        plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, ax=ax)
+
+    ## GOTCHAS ## 
+    def check_loaded(self, function:str):
+        if not self.loaded: 
+            raise Exception(&#39;collection must be loaded before &#39;+function+&#39;() function can be accessed&#39;) 
+    
+    def check_evaluated(self, function:str):
+        if not self.evaluated: 
+            raise Exception(&#39;collection must be evaluated before &#39;+function+&#39;() function can be accessed&#39;) 
+
+    def check_loaded_evaluated(self, function:str): 
+        self.check_loaded(function)
+        self.check_evaluated(function)
+
+    def dont_do_twice(self, function:str): 
+        if function==&#39;load&#39; and self.loaded: 
+            raise Exception(&#39;the function &#39;+function+&#39;() has already been executed and this step cannot be repeated on the object now&#39;)
+        elif function==&#39;evaluate&#39; and self.evaluated: 
+            raise Exception(&#39;the function &#39;+function+&#39;() has already been executed and this step cannot be repeated on the object now&#39;)  </code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="qpoml.main.collection.qpo_reserved_words"><code class="name">var <span class="ident">qpo_reserved_words</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="qpoml.main.collection.calculate_vif"><code class="name flex">
+<span>def <span class="ident">calculate_vif</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_vif(self):
+    self.check_loaded(&#39;calculate_vif&#39;)
+    from qpoml.utilities import calculate_vif 
+
+    data = self.context_tensor 
+    columns = self.context_features 
+
+    data = pd.DataFrame(data, columns=columns)
+
+    vif_df = calculate_vif(data=data)
+
+    return vif_df </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.check_evaluated"><code class="name flex">
+<span>def <span class="ident">check_evaluated</span></span>(<span>self, function: str)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_evaluated(self, function:str):
+    if not self.evaluated: 
+        raise Exception(&#39;collection must be evaluated before &#39;+function+&#39;() function can be accessed&#39;) </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.check_loaded"><code class="name flex">
+<span>def <span class="ident">check_loaded</span></span>(<span>self, function: str)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_loaded(self, function:str):
+    if not self.loaded: 
+        raise Exception(&#39;collection must be loaded before &#39;+function+&#39;() function can be accessed&#39;) </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.check_loaded_evaluated"><code class="name flex">
+<span>def <span class="ident">check_loaded_evaluated</span></span>(<span>self, function: str)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_loaded_evaluated(self, function:str): 
+    self.check_loaded(function)
+    self.check_evaluated(function)</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.correlation_matrix"><code class="name flex">
+<span>def <span class="ident">correlation_matrix</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p><em>Class wrapper to <code>utils.correlation_matrix</code></em>
+</p>
+<h2 id="parameters">Parameters</h2>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>fix after adding to utils correlation matrix docs!</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def correlation_matrix(self): 
+    r&#39;&#39;&#39;
+    _Class wrapper to `utils.correlation_matrix`_  
+
+    Parameters
+    ----------      
+
+    Returns
+    -------
+
+    fix after adding to utils correlation matrix docs! 
+    &#39;&#39;&#39;
+
+    self.check_loaded(&#39;correlation_matrix&#39;)
+    from qpoml.utilities import correlation_matrix 
+
+    data = self.context_tensor
+    columns = self.context_features
+
+    data = pd.DataFrame(data, columns=columns)
+
+    corr, cols = correlation_matrix(data=data)
+
+    return corr, cols</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.dendrogram"><code class="name flex">
+<span>def <span class="ident">dendrogram</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dendrogram(self):
+    self.check_loaded(&#39;dendrogram&#39;)
+    from qpoml.utilities import dendrogram 
+
+    data = self.context_tensor
+    columns = self.context_features
+
+    data = pd.DataFrame(data, columns=columns) 
+
+    corr, dist_linkage, cols = dendrogram(data=data)
+    
+    return corr, dist_linkage, cols </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.dont_do_twice"><code class="name flex">
+<span>def <span class="ident">dont_do_twice</span></span>(<span>self, function: str)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dont_do_twice(self, function:str): 
+    if function==&#39;load&#39; and self.loaded: 
+        raise Exception(&#39;the function &#39;+function+&#39;() has already been executed and this step cannot be repeated on the object now&#39;)
+    elif function==&#39;evaluate&#39; and self.evaluated: 
+        raise Exception(&#39;the function &#39;+function+&#39;() has already been executed and this step cannot be repeated on the object now&#39;)  </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.evaluate"><code class="name flex">
+<span>def <span class="ident">evaluate</span></span>(<span>self, model, model_name, evaluation_approach: str, test_proportion: float = 0.1, folds: int = None) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p><em>Evaluate an already initiated and loaded model</em>
+</p>
+<h2 id="parameters">Parameters</h2>
+<p>model : <code>object</code>
+A initialized regressor object from another class, e.g. sklearn</p>
+<p>model_name : <code>str</code>
+The name of the model, e.g. 'AdaBoostRegressor'</p>
+<p>evaluation_approach : <code>str</code>
+Can be <code>eurostep</code> or <code>single</code> &hellip; Fix this! </p>
+<p>test_proportion : <code>float</code>
+Default is <code>0.1</code>; proportion of values to reserve for test set </p>
+<p>folds : <code>int</code>
+Default is <code>None</code>; if set to some integer, the model will be validated via K-Fold validation, with <code>K=folds</code></p>
+<h2 id="returns">Returns</h2></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None) -&gt; None: 
+    r&#39;&#39;&#39;
+    _Evaluate an already initiated and loaded model_  
+
+    Parameters
+    ----------      
+
+    model : `object`
+        A initialized regressor object from another class, e.g. sklearn
+
+    model_name : `str` 
+        The name of the model, e.g. &#39;AdaBoostRegressor&#39;
+
+    evaluation_approach : `str`
+        Can be `eurostep` or `single` ... Fix this! 
+
+    test_proportion : `float`
+        Default is `0.1`; proportion of values to reserve for test set 
+
+    folds : `int`
+        Default is `None`; if set to some integer, the model will be validated via K-Fold validation, with `K=folds`
+
+    Returns
+    -------
+    &#39;&#39;&#39;
+
+    self.check_loaded(&#39;evaluate&#39;)
+    self.dont_do_twice(&#39;evaluate&#39;)
+
+    from sklearn.model_selection import KFold 
+    from sklearn.model_selection import train_test_split 
+
+    random_state = self.random_state
+
+    qpo_approach = self.qpo_approach 
+
+    context_tensor = self.context_tensor
+    qpo_tensor = self.qpo_tensor
+
+    if qpo_approach == &#39;single&#39;: 
+
+        all_train_indices = []
+        all_test_indices = []
+
+        evaluated_models = [] 
+        predictions = [] 
+
+        X_train = []
+        X_test = []
+        y_train = []
+        y_test = []
+
+        if evaluation_approach == &#39;k-fold&#39; and folds is not None: 
+            kf = KFold(n_splits=folds)
+            
+            train_indices = np.array([i for i, _ in kf.split(context_tensor)]).astype(int)
+            test_indices = np.array([i for _, i in kf.split(context_tensor)]).astype(int)
+
+            all_train_indices.append(train_indices)
+            all_test_indices.append(test_indices)
+
+            for train_indices_fold, test_indices_fold in zip(train_indices, test_indices): 
+                X_train_fold = context_tensor[train_indices_fold]
+                X_test_fold = context_tensor[test_indices_fold] 
+                y_train_fold = qpo_tensor[train_indices_fold]
+                y_test_fold = qpo_tensor[test_indices_fold]
+
+                model_fold = model 
+                model_fold.fit(X_train_fold, y_train_fold)
+                predictions.append(model_fold.predict(X_test_fold))
+                evaluated_models.append(model_fold)
+
+                X_train.append(X_train_fold)
+                X_test.append(X_test_fold)
+                y_train.append(y_train_fold)
+                y_test.append(y_test_fold)
+
+        elif evaluation_approach == &#39;default&#39;: 
+
+            train_indices_fold, test_indices_fold = train_test_split(np.arange(0,len(qpo_tensor), 1).astype(int), random_state=random_state)
+            
+            all_train_indices.append(train_indices_fold)
+            all_test_indices.append(test_indices_fold)
+
+            X_train_fold = context_tensor[train_indices_fold]
+            X_test_fold = context_tensor[test_indices_fold] 
+            y_train_fold = qpo_tensor[train_indices_fold]
+            y_test_fold = qpo_tensor[test_indices_fold]
+
+            model.fit(X_train_fold, y_train_fold)
+            predictions.append(model.predict(X_test_fold))
+            evaluated_models.append(model)
+
+            X_train.append(X_train_fold)
+            X_test.append(X_test_fold)
+            y_train.append(y_train_fold)
+            y_test.append(y_test_fold)
+
+        else: 
+            raise Exception(&#39;&#39;)
+
+        self.all_train_indices = all_train_indices
+        self.all_test_indices = all_test_indices
+
+        self.evaluated_models = evaluated_models 
+        self.predictions = predictions 
+
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
+
+
+    elif qpo_approach == &#39;eurostep&#39;: 
+        pass 
+    
+    else: 
+        raise Exception(&#39;&#39;)
+
+    
+
+    # future idea: let users stratify by more than just internal qpo count 
+
+    ### UPDATE ATTRIBUTES ###
+
+    self.qpo_approach = qpo_approach
+
+    self.evaluated = True  </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.feature_importances"><code class="name flex">
+<span>def <span class="ident">feature_importances</span></span>(<span>self, feature_names: list, kind: str = 'kernel-shap', fold: int = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>fold is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def feature_importances(self, feature_names:list, kind:str=&#39;kernel-shap&#39;, fold:int=None):
+    r&#39;&#39;&#39;
+    fold is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from 
+    &#39;&#39;&#39;
+    from qpoml.utilities import feature_importances
+    self.check_evaluated(&#39;feature_importances&#39;) 
+
+    model = self.evaluated_models
+    X_test = self.X_test 
+    y_test = self.y_test 
+
+    if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+        model = model[fold]
+        X_test = X_test[fold]
+        y_test = y_test[fold] 
+
+    else: 
+        model = model[0]
+        X_test = X_test[0]
+        y_test = y_test[0]
+
+    feature_importances_arr, feature_names, importances_df = feature_importances(model, X_test, y_test, feature_names=feature_names, kind=kind)
+    
+    return feature_importances_arr, feature_names, importances_df</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.load"><code class="name flex">
+<span>def <span class="ident">load</span></span>(<span>self, qpo_csv: str, context_csv: str, context_type: str, context_preprocess, qpo_preprocess: dict, qpo_approach: str = 'single', spectrum_approach: str = 'by-row', rebin: int = None) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p><em>Class method for loading collection object</em>
+</p>
+<h2 id="parameters">Parameters</h2>
+<p>qpo_csv : <code>str</code>
+File path to correctly formatted csv file with QPO information </p>
+<p>context_csv : <code>str</code>
+File path to correctly formatted csv file with context information </p>
+<p>context_type : <code>str</code>
+If it is set to "spectrum" preprocessing will handle context input as spectrum </p>
+<p>context_preprocess : <code>dict</code> or <code>str</code>
+Fix this</p>
+<p>qpo_preprocess : <code>dict</code> or <code>str</code>
+Fix this</p>
+<p>qpo_approach : <code>str</code>
+Fix this</p>
+<p>context_approach : <code>str</code>
+Fix this </p>
+<p>rebin : <code>int</code>
+Defaults to <code>None</code>. If set to integer, spectrum will be rebinned such that it contains <code>rebin</code> channels.
+</p>
+<h2 id="returns">Returns</h2></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load(self, qpo_csv:str, context_csv:str, context_type:str, context_preprocess, qpo_preprocess:dict, qpo_approach:str=&#39;single&#39;, spectrum_approach:str=&#39;by-row&#39;, rebin:int=None) -&gt; None: 
+    
+    r&#39;&#39;&#39;
+    _Class method for loading collection object_  
+
+    Parameters
+    ----------      
+
+    qpo_csv : `str`
+        File path to correctly formatted csv file with QPO information 
+
+    context_csv : `str`
+        File path to correctly formatted csv file with context information 
+
+    context_type : `str`
+        If it is set to &#34;spectrum&#34; preprocessing will handle context input as spectrum 
+
+    context_preprocess : `dict` or `str` 
+        Fix this
+
+    qpo_preprocess : `dict` or `str`
+        Fix this
+
+    qpo_approach : `str`
+        Fix this
+
+    context_approach : `str` 
+        Fix this 
+
+    rebin : `int`
+        Defaults to `None`. If set to integer, spectrum will be rebinned such that it contains `rebin` channels.     
+
+
+    Returns
+    -------
+
+    &#39;&#39;&#39;
+
+    self.dont_do_twice(&#39;load&#39;)
+
+    from collections import Counter
+    from qpoml.utilities import preprocess1d
+
+    # check so you can do it once it&#39;s already been loaded or evaluated 
+
+    ### CONTEXT ### 
+
+    context_df = pd.read_csv(context_csv).sample(frac=1, random_state=self.random_state) # shuffle 
+    temp_df = context_df.drop(columns=[&#39;observation_ID&#39;])
+    
+    observation_IDs = list(context_df[&#39;observation_ID&#39;])
+    context_features = list(temp_df)
+    context_tensor = np.array(temp_df)
+
+    if context_type==&#39;spectrum&#39;: 
+        self.context_is_spectrum = True 
+
+        context_tensor = context_tensor.astype(float)
+        
+        spectral_ranges = []
+        spectral_centers = []
+
+        for col in context_features: 
+            col_list = col.split(&#39;_&#39;)
+            spectral_centers.append(float(col_list[0]))
+            col_list = col_list[1].split(&#39;-&#39;)
+            spectral_ranges.append((col_list[0], col_list[1]))
+
+        if rebin is not None: 
+
+            from scipy.stats import binned_statistic
+            
+            lows = [i[0] for i in spectral_ranges]
+            highs = [i[1] for i in spectral_ranges]
+
+            rebinned_lows, _, _ = binned_statistic(spectral_centers, lows, &#39;min&#39;, bins=rebin)
+            rebinned_highs, _, _  = binned_statistic(spectral_centers, highs, &#39;max&#39;, bins=rebin)
+
+            spectral_ranges = [[i, j] for i,j in zip(rebinned_lows, rebinned_highs)]
+            context_tensor = np.array([binned_statistic(spectral_centers, i, &#39;sum&#39;, bins=rebin)[0] for i in context_tensor])
+            spectral_centers, _, _ = binned_statistic(spectral_centers, spectral_centers, &#39;mean&#39;, bins=rebin)
+
+            temp_one = [str(i)+&#39;_&#39; for i in spectral_centers]
+
+            # lol this is an insane list comprehension 
+            context_features = [temp_one[index]+str(spectral_ranges[index][0])+&#39;-&#39;+str(spectral_ranges[index][1]) for index in range(len(spectral_centers))]
+
+        ### NORMALIZE CONTEXT SPECTRUM ### 
+        temp_tensor = None 
+        if spectrum_approach == &#39;by-row&#39; or spectrum_approach == &#39;as-is&#39;: 
+            temp_tensor = context_tensor 
+        elif spectrum_approach == &#39;by-column&#39;: 
+            temp_tensor = np.transpose(context_tensor)
+        else: 
+            raise Exception(&#39;&#39;)
+        for index, arr in enumerate(temp_tensor): 
+                arr = preprocess1d(arr, context_preprocess)
+                temp_tensor[index] = arr 
+        if spectrum_approach == &#39;by-column&#39;: 
+            context_tensor = np.transpose(temp_tensor)
+        else: 
+            context_tensor = temp_tensor 
+
+        self.spectral_ranges = spectral_ranges 
+        self.spectral_centers = spectral_centers 
+
+    else: 
+        transposed = np.transpose(context_tensor)
+        for index, arr in enumerate(transposed): 
+            arr = preprocess1d(arr, context_preprocess[context_features[index]])
+            transposed[index] = arr 
+        
+        context_tensor = np.transpose(transposed)
+
+    ### QPO ### 
+
+    num_qpos = []
+
+    qpo_df = pd.read_csv(qpo_csv)
+    qpo_features = [i for i in list(qpo_df) if i not in self.qpo_reserved_words]
+
+    max_simultaneous_qpos = Counter(qpo_df[&#39;observation_ID&#39;]).most_common(1)[0][1]
+    max_length = max_simultaneous_qpos*len(qpo_features)
+    qpo_tensor = []
+
+    for qpo_feature in qpo_features: 
+        if qpo_feature not in self.qpo_reserved_words: # reserved QPO words 
+            qpo_df[qpo_feature] = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
+
+    for observation_ID in observation_IDs: 
+        sliced_qpo_df = qpo_df.loc[qpo_df[&#39;observation_ID&#39;]==observation_ID]
+        sliced_qpo_df = sliced_qpo_df.sort_values(by=&#39;frequency&#39;)
+
+        num_qpos.append(len(sliced_qpo_df.index))
+
+        if &#39;order&#39; in list(sliced_qpo_df): 
+            sliced_qpo_df = sliced_qpo_df.sort_values(by=&#39;order&#39;)
+            sliced_qpo_df = sliced_qpo_df.drop(columns=[&#39;order&#39;])
+
+        # keep track of reserved words 
+        qpo_vector = np.array(sliced_qpo_df.drop(columns=[&#39;observation_ID&#39;])).flatten() 
+
+        qpo_tensor.append(qpo_vector)
+
+    if qpo_approach == &#39;single&#39;: 
+        # pad with zeros  
+        for index, arr in enumerate(qpo_tensor): 
+            arr = np.concatenate((arr, np.zeros(shape=max_length-len(arr)))) 
+            qpo_tensor[index] = arr 
+
+    qpo_tensor = np.array(qpo_tensor, dtype=object)
+
+    ### UPDATE ATTRIBUTES ### 
+    self.observation_IDs = observation_IDs 
+    self.num_qpos = num_qpos 
+    self.context_tensor = context_tensor 
+    self.qpo_tensor = qpo_tensor 
+    self.max_simultaneous_qpos = max_simultaneous_qpos
+    self.qpo_approach = qpo_approach
+    self.context_features = context_features 
+    self.qpo_features = qpo_features 
+
+    self.loaded = True </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.performance_statistics"><code class="name flex">
+<span>def <span class="ident">performance_statistics</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p><em>Return model performance statistics</em>
+</p>
+<h2 id="parameters">Parameters</h2>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>statistics</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of performance statistics. Currently contains <code>mae</code> and <code>mse</code></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def performance_statistics(self): 
+    r&#39;&#39;&#39;
+    _Return model performance statistics_  
+
+    Parameters
+    ----------      
+
+    Returns
+    -------
+
+    statistics : `dict`
+        Dictionary of performance statistics. Currently contains `mae` and `mse` 
+    &#39;&#39;&#39;
+
+    self.check_loaded_evaluated(&#39;performance_statistics&#39;)
+
+    from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+    statistics = {}
+
+    if self.qpo_approach==&#39;single&#39;: 
+        predictions = self.predictions
+        y_test = self.y_test 
+
+        mae = None 
+        mse = None
+
+        if len(predictions)==1: 
+            predictions = predictions[0].flatten()
+            y_test = y_test[0].flatten()
+            mse = mean_squared_error(y_test, predictions)
+            mae = mean_absolute_error(y_test, predictions)
+
+        else: 
+            
+            mse = []
+            mae = []
+
+            for prediction, true in zip(predictions, y_test): 
+                mse.append(mean_squared_error(true, prediction))
+                mae.append(mean_absolute_error(true, prediction))
+            
+        statistics[&#39;mse&#39;] = mse
+        statistics[&#39;mae&#39;] = mae
+
+    return statistics  </code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.plot_correlation_matrix"><code class="name flex">
+<span>def <span class="ident">plot_correlation_matrix</span></span>(<span>self, ax=None, matrix_style: str = 'default')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_correlation_matrix(self, ax=None, matrix_style:str=&#39;default&#39;):
+    self.check_loaded(&#39;plot_correlation_matrix&#39;)
+    from qpoml.plotting import plot_correlation_matrix
+
+    data = self.context_tensor 
+    columns = self.context_features 
+
+    data = pd.DataFrame(data, columns=columns)
+
+    plot_correlation_matrix(data=data, ax=ax, matrix_style=matrix_style)</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.plot_dendrogram"><code class="name flex">
+<span>def <span class="ident">plot_dendrogram</span></span>(<span>self, ax=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_dendrogram(self, ax=None): 
+    self.check_loaded(&#39;plot_dendrogram&#39;)
+    from qpoml.plotting import plot_dendrogram 
+
+    data = self.context_tensor
+    columns = self.context_features
+
+    data = pd.DataFrame(data, columns=columns) 
+
+    plot_dendrogram(data=data, ax=ax)</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.plot_feature_importances"><code class="name flex">
+<span>def <span class="ident">plot_feature_importances</span></span>(<span>self, kind: str = 'kernel-shap', ax=None, fold: int = None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_feature_importances(self, kind:str=&#39;kernel-shap&#39;, ax=None, fold:int=None):
+    self.check_evaluated(&#39;plot_feature_importances&#39;)
+    from qpoml.plotting import plot_feature_importances
+    
+    model = self.evaluated_models 
+    X_test = self.X_test 
+    y_test = self.y_test 
+    predictions = self.predictions 
+
+    if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+        model = model[fold]
+        predictions = predictions[fold]
+        X_test = X_test[fold]
+        y_test = y_test[fold] 
+
+    else: 
+        model = model[0]
+        predictions = predictions[0]
+        X_test = X_test[0]
+        y_test = y_test[0] 
+
+    feature_names = self.context_features
+
+    plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, ax=ax)</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.plot_pairplot"><code class="name flex">
+<span>def <span class="ident">plot_pairplot</span></span>(<span>self, steps=False, ax=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_pairplot(self, steps=False, ax=None): 
+    self.check_loaded(&#39;plot_pairplot&#39;)
+    from qpoml.plotting import plot_pairplot 
+
+    data = self.context_tensor 
+    columns = self.context_features 
+
+    data = pd.DataFrame(data, columns=columns)
+
+    plot_pairplot(data=data, steps=steps, ax=ax)</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.plot_results_regression"><code class="name flex">
+<span>def <span class="ident">plot_results_regression</span></span>(<span>self, feature_name: str, which: list, ax=None, xlim: list = [-0.1, 1.1], fold: int = None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_results_regression(self, feature_name:str, which:list, ax=None, xlim:list=[-0.1,1.1], fold:int=None):
+    self.check_evaluated(&#39;plot_results_regression&#39;)
+    from qpoml.plotting import plot_results_regression
+
+    y_test = self.y_test 
+    predictions = self.predictions 
+
+    if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+        predictions = predictions[fold]
+        y_test = y_test[fold] 
+
+    else: 
+        predictions = predictions[0]
+        y_test = y_test[0] 
+
+    plot_results_regression(regression_x = y_test, regression_y=predictions, y_test=None, predictions=predictions, feature_name=feature_name, which=which, ax=ax, xlim=xlim)</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.plot_vif"><code class="name flex">
+<span>def <span class="ident">plot_vif</span></span>(<span>self, cutoff: int = 10, ax=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_vif(self, cutoff:int=10, ax=None): 
+    self.check_loaded(&#39;plot_vif&#39;)
+    from qpoml.plotting import plot_vif 
+
+    data = self.context_tensor 
+    columns = self.context_features 
+
+    data = pd.DataFrame(data, columns=columns)
+
+    plot_vif(data=data, cutoff=cutoff, ax=ax)</code></pre>
+</details>
+</dd>
+<dt id="qpoml.main.collection.results_regression"><code class="name flex">
+<span>def <span class="ident">results_regression</span></span>(<span>self, which: list, fold: int = None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def results_regression(self, which:list, fold:int=None):
+    from qpoml.utilities import results_regression
+    self.check_evaluated(&#39;feature_importances&#39;) 
+
+    model = self.evaluated_models
+    predictions = self.predictions 
+    y_test = self.y_test 
+
+    if self.qpo_approach == &#39;k-fold&#39; and fold is not None: 
+        model = model[fold]
+        predictions = predictions[fold]
+        y_test = y_test[fold] 
+
+    else: 
+        model = model[0]
+        predictions = predictions[0]
+        y_test = y_test[0] 
+
+    regression_x, regression_y, mb, stats = results_regression(regression_x=y_test, regression_y=predictions, which=which)
+
+    return regression_x, regression_y, mb, stats</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qpoml" href="index.html">qpoml</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="qpoml.main.collection" href="#qpoml.main.collection">collection</a></code></h4>
+<ul class="">
+<li><code><a title="qpoml.main.collection.calculate_vif" href="#qpoml.main.collection.calculate_vif">calculate_vif</a></code></li>
+<li><code><a title="qpoml.main.collection.check_evaluated" href="#qpoml.main.collection.check_evaluated">check_evaluated</a></code></li>
+<li><code><a title="qpoml.main.collection.check_loaded" href="#qpoml.main.collection.check_loaded">check_loaded</a></code></li>
+<li><code><a title="qpoml.main.collection.check_loaded_evaluated" href="#qpoml.main.collection.check_loaded_evaluated">check_loaded_evaluated</a></code></li>
+<li><code><a title="qpoml.main.collection.correlation_matrix" href="#qpoml.main.collection.correlation_matrix">correlation_matrix</a></code></li>
+<li><code><a title="qpoml.main.collection.dendrogram" href="#qpoml.main.collection.dendrogram">dendrogram</a></code></li>
+<li><code><a title="qpoml.main.collection.dont_do_twice" href="#qpoml.main.collection.dont_do_twice">dont_do_twice</a></code></li>
+<li><code><a title="qpoml.main.collection.evaluate" href="#qpoml.main.collection.evaluate">evaluate</a></code></li>
+<li><code><a title="qpoml.main.collection.feature_importances" href="#qpoml.main.collection.feature_importances">feature_importances</a></code></li>
+<li><code><a title="qpoml.main.collection.load" href="#qpoml.main.collection.load">load</a></code></li>
+<li><code><a title="qpoml.main.collection.performance_statistics" href="#qpoml.main.collection.performance_statistics">performance_statistics</a></code></li>
+<li><code><a title="qpoml.main.collection.plot_correlation_matrix" href="#qpoml.main.collection.plot_correlation_matrix">plot_correlation_matrix</a></code></li>
+<li><code><a title="qpoml.main.collection.plot_dendrogram" href="#qpoml.main.collection.plot_dendrogram">plot_dendrogram</a></code></li>
+<li><code><a title="qpoml.main.collection.plot_feature_importances" href="#qpoml.main.collection.plot_feature_importances">plot_feature_importances</a></code></li>
+<li><code><a title="qpoml.main.collection.plot_pairplot" href="#qpoml.main.collection.plot_pairplot">plot_pairplot</a></code></li>
+<li><code><a title="qpoml.main.collection.plot_results_regression" href="#qpoml.main.collection.plot_results_regression">plot_results_regression</a></code></li>
+<li><code><a title="qpoml.main.collection.plot_vif" href="#qpoml.main.collection.plot_vif">plot_vif</a></code></li>
+<li><code><a title="qpoml.main.collection.qpo_reserved_words" href="#qpoml.main.collection.qpo_reserved_words">qpo_reserved_words</a></code></li>
+<li><code><a title="qpoml.main.collection.results_regression" href="#qpoml.main.collection.results_regression">results_regression</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

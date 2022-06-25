@@ -131,14 +131,12 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list,
 
         regression_x, regression_y = (i[which] for i in (regression_x, regression_y)) 
 
-    regression_x = regression_x.flatten()
-    regression_y = regression_y.flatten()
+    regression_x = regression_x.flatten().astype(float)
+    regression_y = regression_y.flatten().astype(float)
 
-    print(regression_x, regression_y)
+    linregress_result = linregress(regression_x, regression_y) 
 
-    m, b, r, pval, stderr, intercept_stderr = linregress(regression_x, regression_y) 
-
-    return regression_x, regression_y, (m, b), (r, pval, stderr, intercept_stderr) 
+    return regression_x, regression_y, linregress_result 
     
 def feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap'):
     
