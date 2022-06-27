@@ -1,0 +1,73 @@
+# basic workflow to help you get started with Actions
+name: run_tests
+
+# Controls when the workflow will run
+on:
+  
+  schedule: 
+    - cron: 0 0 1 ? * TUE,THU,SUN * # three times a week 
+    
+  issues:
+    types: [opened, edited] # run when issue is opened or edited 
+
+  
+  # Triggers the workflow on push or pull request events but only for the main branch
+  #push:
+  #  branches: [ main ]
+  #pull_request:
+  #  branches: [ main ]
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        # Run in all these versions of Python
+        python-version: [3.7, 3.8] # lol 
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+        # Checkout the latest code from the repo
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        # Setup which version of Python to use
+      - name: Set Up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+        # Display the Python version being used
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+        # Install the package using the setup.py
+        
+      # test dependencies --> should this be automatic? i.e. should it create the requirements itself every time and test?  
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt # install from conda? 
+          
+      - name: Install package
+        run: python setup.py install
+        
+     # - name: Install extension-helpings # because this was breaking CI
+     #   run: | 
+     #     python -m pip install --upgrade pip
+     #     pip install extension-helpers
+        
+        # Install pytest 
+        
+      - name: Install pytest
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          
+        # Run the tests. I'm using pytest and the file is in the tests directory.
+      - name: Run tests
+        run: pytest qpoml/tests/current/current_test.py
