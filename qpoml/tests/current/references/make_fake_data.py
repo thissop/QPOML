@@ -54,8 +54,26 @@ def first_version(observations=100):
     qpo_df.to_csv('./qpoml/tests/current/references/fake_generated_qpos.csv', index=False)
     context_df.to_csv('./qpoml/tests/current/references/fake_generated_spectrum.csv', index=False)
 
-first_version()
+#first_version()
+
+def update_with_scalars(): 
+    import pandas as pd 
+    import numpy as np
             
-        
+    fake_ids = np.array(pd.read_csv('./qpoml/tests/current/references/fake_generated_spectrum.csv')['observation_ID'])
+
+    size = len(fake_ids)        
+
+    gammas = np.random.uniform(1.1, 3.3, size=size)
+    tins = np.random.uniform(0.1, 2, size=size)
+    hardness = np.random.uniform(size=size)
+
+    scalar_df = pd.DataFrame(np.array([fake_ids, gammas, tins, hardness]).T, 
+                             columns=['observation_ID', 'gamma', 'T_in', 'hardness'])
+
+    scalar_df.to_csv('./qpoml/tests/current/references/fake_generated_scalar_context.csv', index=False)
+
+update_with_scalars()
+    
 
         

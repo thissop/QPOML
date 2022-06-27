@@ -4,12 +4,10 @@ import warnings
 import numpy as np
 import seaborn as sns 
 import matplotlib.pyplot as plt 
-plt.style.use('science.mplstyle')
+plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
 
 #plt.style.use('seaborn-darkgrid')
 #plt.rcParams['font.family'] = 'serif'
-
-cmap = 'bwr'
 
 ### POST LOAD ### 
 
@@ -17,6 +15,8 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
     from qpoml.utilities import correlation_matrix 
 
     corr, cols = correlation_matrix(data=data)
+
+    cmap = sns.diverging_palette(230, 20, as_cmap=True)
 
     internal = False 
     if ax is None: 
@@ -162,9 +162,3 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None):
     if internal: 
         plt.tight_layout()
         plt.show()
-
-def plot_test(): 
-    fig, ax = plt.subplots()
-    i = [1,2,3,4,5,6,7]
-    ax.plot(i, i)
-    plt.show()

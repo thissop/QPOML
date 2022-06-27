@@ -117,12 +117,14 @@ class collection:
                 col_list = col_list[1].split('-')
                 spectral_ranges.append((col_list[0], col_list[1]))
 
+            spectral_centers = np.array(spectral_centers).astype(float)
+
             if rebin is not None: 
 
                 from scipy.stats import binned_statistic
                 
-                lows = [i[0] for i in spectral_ranges]
-                highs = [i[1] for i in spectral_ranges]
+                lows = np.array([i[0] for i in spectral_ranges]).astype(float)
+                highs = np.array([i[1] for i in spectral_ranges]).astype(float)
 
                 rebinned_lows, _, _ = binned_statistic(spectral_centers, lows, 'min', bins=rebin)
                 rebinned_highs, _, _  = binned_statistic(spectral_centers, highs, 'max', bins=rebin)
@@ -591,6 +593,47 @@ class collection:
         feature_names = self.context_features
 
         plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, ax=ax)
+
+    def plot_fold_performance(self, statistic:str='mae', ax=None): 
+        r'''
+        _Class method for visualizing predictive performance across different folds of test data_  
+
+        Parameters
+        ----------      
+
+        statistic : `str`
+            Either 'mse' for mean squared error, or 'mae' for median absolute error  
+
+        Returns
+        -------
+        '''
+
+        self.check_evaluated('plot_fold_performance')
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
+
+        internal = False 
+        if ax is None: 
+            fig, ax = plt.subplots()
+            internal = True 
+
+        measure = self.performance_statistics()
+        measure = measure[statistic]
+
+        folds = list(range(len(measure)))
+
+        temp_df = pd.DataFrame(np.array([folds, measure]).T, columns=['fold', 'measure'])
+
+        plt.plot(folds, measure, '-o')
+        ax.set_xlabel("Test Fold")
+        ax.set_ylabel("Model "+statistic.capitalize())
+        ax.tick_params(bottom=True, labelbottom=False)
+        plt.tick_params(axis='x', which='minor', bottom=False, top=False)
+
+        if internal: 
+            plt.tight_layout()
+            plt.show()
 
     ## GOTCHAS ## 
     def check_loaded(self, function:str):

@@ -29,29 +29,96 @@ def test_load_basic():
 #test_load_basic()
 
 def test_evaluation_single(): 
-    from qpoml.main import collection
 
-    spectrum_csv = './qpoml/tests/current/references/fake_generated_spectrum.csv'
-    qpo_csv = './qpoml/tests/current/references/fake_generated_qpos.csv'
+    try: 
+        from qpoml.main import collection
+        import matplotlib.pyplot as plt 
 
-    collection_one = collection()
-    collection_one.load(qpo_csv=qpo_csv, context_csv=spectrum_csv, context_type='spectrum', context_preprocess='median', 
-                        qpo_preprocess={'frequency':[1,16], 'width':[0.1,1.6], 'amplitude':[1,6]}, qpo_approach='single', 
-                        spectrum_approach='by-row', rebin=3)
+        spectrum_csv = './qpoml/tests/current/references/fake_generated_spectrum.csv'
+        qpo_csv = './qpoml/tests/current/references/fake_generated_qpos.csv'
+        r'''
+        collection_one = collection()
+        collection_one.load(qpo_csv=qpo_csv, context_csv=spectrum_csv, context_type='spectrum', context_preprocess='median', 
+                            qpo_preprocess={'frequency':[1,16], 'width':[0.1,1.6], 'amplitude':[1,6]}, qpo_approach='single', 
+                            spectrum_approach='by-row', rebin=3)
 
-    from sklearn.ensemble import RandomForestRegressor
+        from sklearn.ensemble import RandomForestRegressor
 
-    regr = RandomForestRegressor()
+        regr = RandomForestRegressor()
 
-    collection_one.evaluate(model=regr, model_name='RandomForestRegressor', evaluation_approach='default')
+        collection_one.evaluate(model=regr, model_name='RandomForestRegressor', evaluation_approach='default')
 
-    #print(collection_one.performance_statistics())
+        #print(collection_one.performance_statistics())
 
-    collection_one.plot_correlation_matrix()
-    collection_one.plot_pairplot()
-    collection_one.plot_dendrogram()
-    collection_one.plot_vif()
-    collection_one.plot_results_regression(feature_name='frequency', which=[0,1])
-    collection_one.plot_feature_importances(kind='tree-shap')
+        fig, axs = plt.subplots(2,3, figsize=(20,12))
+
+        collection_one.plot_correlation_matrix(ax=axs[0,0])
+        collection_one.plot_dendrogram(ax=axs[0,2])
+        collection_one.plot_vif(ax=axs[1,0])
+        collection_one.plot_results_regression(feature_name='frequency', which=[0,1], ax=axs[1,1])
+        collection_one.plot_feature_importances(kind='tree-shap', ax=axs[1,2])
+
+        plt.tight_layout()
+
+        plt.savefig('./qpoml/tests/current/outputs/spectrum_input_basic_plots.png', dpi=150)
+        plt.clf()
+        plt.close()
+
+        fig, ax = plt.subplots(figsize=(6,6))
+
+        collection_one.plot_pairplot(ax=ax)
+        plt.savefig('./qpoml/tests/current/outputs/spectrum_input_pair_plot.png', dpi=150)
+        plt.clf()
+        plt.close()
+        '''
+        scalar_collection_csv = './qpoml/tests/current/references/fake_generated_scalar_context.csv'
+        
+        collection_two = collection()
+        context_dict = {'gamma':[1.0,3.5],'T_in':[0.1,2.5],'hardness':[0,1]}
+        collection_two.load(qpo_csv=qpo_csv, context_csv=scalar_collection_csv, context_type='scalar', context_preprocess=context_dict, 
+                            qpo_preprocess={'frequency':[1,16], 'width':[0.1,1.6], 'amplitude':[1,6]}, qpo_approach='single')
+
+        from sklearn.ensemble import RandomForestRegressor
+
+        regr = RandomForestRegressor()
+
+        collection_two.evaluate(model=regr, model_name='RandomForestRegressor', evaluation_approach='k-fold', folds=5)
+
+        #print(collection_one.performance_statistics())
+
+        fig, axs = plt.subplots(2,3, figsize=(20,12))
+
+        collection_two.plot_correlation_matrix(ax=axs[0,0])
+        collection_two.plot_dendrogram(ax=axs[0,2])
+        collection_two.plot_vif(ax=axs[1,0])
+        collection_two.plot_results_regression(feature_name='frequency', which=[0,1], ax=axs[1,1])
+        collection_two.plot_feature_importances(kind='tree-shap', ax=axs[1,2])
+
+        plt.tight_layout()
+
+        plt.savefig('./qpoml/tests/current/outputs/scalar_input_three_fold_basic_plots_.png', dpi=150)
+        plt.clf()
+        plt.close()
+
+        fig, ax = plt.subplots(figsize=(6,6))
+
+        collection_two.plot_pairplot(ax=ax)
+        plt.savefig('./qpoml/tests/current/outputs/scalar_input_three_fold_pair_plot.png', dpi=150)
+        plt.clf()
+        plt.close()
+
+        fig, ax = plt.subplots()
+
+        collection_two.plot_fold_performance(statistic='mse', ax=ax)
+        plt.savefig('./qpoml/tests/current/outputs/fold_performance_plot_test.png', dpi=150)
+        plt.clf()
+        plt.close()
+
+        assert True
+
+    except: 
+        assert False
+
+
 
 test_evaluation_single()
