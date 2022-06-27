@@ -1,21 +1,13 @@
 # basic workflow to help you get started with Actions
-name: run_tests
+name: CI
 
 # Controls when the workflow will run
 on:
-  
-  schedule: 
-    - cron: 0 0 1 ? * TUE,THU,SUN * # three times a week 
-    
-  issues:
-    types: [opened, edited] # run when issue is opened or edited 
-
-  
   # Triggers the workflow on push or pull request events but only for the main branch
-  #push:
-  #  branches: [ main ]
-  #pull_request:
-  #  branches: [ main ]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
