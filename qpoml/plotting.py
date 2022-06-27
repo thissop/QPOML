@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import seaborn as sns 
 import matplotlib.pyplot as plt 
+plt.style.use('science.mplstyle')
 
 #plt.style.use('seaborn-darkgrid')
 #plt.rcParams['font.family'] = 'serif'
@@ -161,3 +162,9 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None):
     if internal: 
         plt.tight_layout()
         plt.show()
+
+def plot_test(): 
+    fig, ax = plt.subplots()
+    i = [1,2,3,4,5,6,7]
+    ax.plot(i, i)
+    plt.show()

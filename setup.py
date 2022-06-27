@@ -6,5 +6,5 @@ setup(
     author='Thaddaeus Kiker',
     license='Creative Commons Attribution-Noncommercial-Share Alike license',
     long_description=open('README.md').read(),
-    install_requires = ['numpy', 'pandas', 'matplotlib', 'astropy', 'sklearn']
+    install_requires = ['numpy', 'pandas', 'matplotlib', 'astropy', 'scikit-learn', 'seaborn', 'statsmodels', 'scipy', 'shap']
 )
