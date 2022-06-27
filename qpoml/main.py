@@ -502,6 +502,9 @@ class collection:
         
         return feature_importances_arr, feature_names, importances_df
 
+    def get_data(self): 
+        return self.X_train, self.X_test, self.y_train, self.y_test
+        
     ## PLOTTING WRAPPERS ## 
 
     ### POST LOAD ### 

@@ -38,6 +38,10 @@ def preprocess1d(x, preprocess):
     
     return modified
 
+### ###
+
+ 
+
 ### POST LOAD ### 
 
 def correlation_matrix(data:pandas.DataFrame): # <== I don't think this works for spectrums? 
