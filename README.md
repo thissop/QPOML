@@ -1,7 +1,17 @@
 # QPOML
-
 ![CI](https://github.com/thissop/QPOML/actions/workflows/main.yml/badge.svg?event=push)
 ![python versions](https://img.shields.io/badge/python-3.7-blue&logo=Python&style=Plastic)
+
+## Instalation 
+
+### Dependencies 
+
+qpoml requires: 
+* Python (>= 3.8)
+* NumPy 
+* SciPy 
+
+
 
 ```pdoc3 qpoml --html -o docs```
 
