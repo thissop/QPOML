@@ -38,10 +38,54 @@ def preprocess1d(x, preprocess):
     
     return modified
 
-### ###
+### "BORROWED" ###
 
+def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:int, n_test:int, approach:str, rope:list=[[-0.01, 0.01], 0.95]):
+    r'''
+    
+    Parameters
+    ----------
+    first_scores : 
+
+    second_scores : 
+
+    num_train : 
+
+    num_test : 
+
+    approach :
+
+    rope : list
+         
+    
+    '''
+    from scipy.stats import t
+    from qpoml.borrowed import corrected_std, compute_corrected_ttest
+
+    differences = np.array(first_scores) - np.array(second_scores)
+
+    dof = len(differences)-1
+
+    if approach == 'frequentist': 
+        t_stat, p_val = compute_corrected_ttest(differences=differences, df=dof, n_train=n_train, n_test=n_test)
+        return t_stat, p_val
+
+    elif approach == 'bayesian': 
+        posterior = t(dof, loc=np.mean(differences), scale=corrected_std(differences, n_train, n_test))
+        first_better_than_second = 1 - posterior.cdf(0)
+        second_better_than_first = 1-first_better_than_second
+
+        if rope is None: 
+
+            return first_better_than_second, second_better_than_first 
+
+        else: 
+            rope_interval = rope[0]
+            rope_prob = posterior.cdf(rope_interval[1]) - posterior.cdf(rope_interval[0])
+            cred_interval = list(posterior.interval(rope[1]))
+
+            return first_better_than_second, second_better_than_first, rope_prob, cred_interval
  
-
 ### POST LOAD ### 
 
 def correlation_matrix(data:pandas.DataFrame): # <== I don't think this works for spectrums? 

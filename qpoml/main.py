@@ -216,7 +216,7 @@ class collection:
         self.loaded = True 
 
     ## EVALUATE ##     
-    def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None) -> None: 
+    def evaluate(self, model, model_name, evaluation_approach:str, test_proportion:float=0.1, folds:int=None, repetitions:int=None) -> None: 
         r'''
         _Evaluate an already initiated and loaded model_  
 
@@ -269,10 +269,18 @@ class collection:
             y_test = []
 
             if evaluation_approach == 'k-fold' and folds is not None: 
-                kf = KFold(n_splits=folds)
                 
-                train_indices = np.array([i for i, _ in kf.split(context_tensor)]).astype(int)
-                test_indices = np.array([i for _, i in kf.split(context_tensor)]).astype(int)
+                if repetitions is None: 
+                    kf = KFold(n_splits=folds)
+                
+                else: 
+                    from sklearn.model_selection import RepeatedKFold
+                    kf = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                
+                split = list(kf.split(context_tensor))
+                print(split)
+                train_indices = np.array([i for i, _ in split]).astype(int)
+                test_indices = np.array([i for _, i in split]).astype(int)
 
                 all_train_indices.append(train_indices)
                 all_test_indices.append(test_indices)
@@ -334,8 +342,6 @@ class collection:
         
         else: 
             raise Exception('')
-
-        
 
         # future idea: let users stratify by more than just internal qpo count 
 
@@ -630,7 +636,7 @@ class collection:
 
         plt.plot(folds, measure, '-o')
         ax.set_xlabel("Test Fold")
-        ax.set_ylabel("Model "+statistic.capitalize())
+        ax.set_ylabel("Model "+statistic)
         ax.tick_params(bottom=True, labelbottom=False)
         plt.tick_params(axis='x', which='minor', bottom=False, top=False)
 

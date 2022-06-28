@@ -34,7 +34,7 @@ def test_evaluation_single():
 
         spectrum_csv = './qpoml/tests/current/references/fake_generated_spectrum.csv'
         qpo_csv = './qpoml/tests/current/references/fake_generated_qpos.csv'
-
+        r'''
         collection_one = collection()
         collection_one.load(qpo_csv=qpo_csv, context_csv=spectrum_csv, context_type='spectrum', context_preprocess='median', 
                             qpo_preprocess={'frequency':[1,16], 'width':[0.1,1.6], 'amplitude':[1,6]}, qpo_approach='single', 
@@ -68,7 +68,7 @@ def test_evaluation_single():
         plt.savefig('./qpoml/tests/current/outputs/spectrum_input_pair_plot.png', dpi=150)
         plt.clf()
         plt.close()
-        
+        '''
         scalar_collection_csv = './qpoml/tests/current/references/fake_generated_scalar_context.csv'
         
         collection_two = collection()
@@ -80,7 +80,7 @@ def test_evaluation_single():
 
         regr = RandomForestRegressor()
 
-        collection_two.evaluate(model=regr, model_name='RandomForestRegressor', evaluation_approach='k-fold', folds=5)
+        collection_two.evaluate(model=regr, model_name='RandomForestRegressor', evaluation_approach='k-fold', folds=5, repetitions=4)
 
         #print(collection_one.performance_statistics())
 
@@ -116,3 +116,5 @@ def test_evaluation_single():
 
     except: 
         assert False
+
+test_evaluation_single()
