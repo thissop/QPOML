@@ -73,7 +73,8 @@ def update_with_scalars():
 
     scalar_df.to_csv('./qpoml/tests/current/references/fake_generated_scalar_context.csv', index=False)
 
-update_with_scalars()
-    
+#update_with_scalars()
+
+   
 
         

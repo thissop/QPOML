@@ -356,7 +356,6 @@ class collection:
     # what does sandman mean in the old slang? e.g. in hushaby song 
 
     ## UTILITIES ## 
-
     def performance_statistics(self): 
         r'''
         _Return model performance statistics_  
@@ -403,6 +402,44 @@ class collection:
             statistics['mae'] = mae
 
         return statistics  
+
+    def grid_search(self, model, parameters:dict, n_jobs:int=None): 
+        r'''
+        _Run five fold exhaustive grid search for hyperparameter tuning_
+
+        Parameters 
+        ----------
+
+        model : 
+
+        parameters : 
+
+        n_jobs : 
+
+        Returns
+        -------
+
+        '''
+
+        self.check_loaded('grid_search')
+
+        from sklearn.model_selection import GridSearchCV
+        
+        if n_jobs is None: 
+            clf = GridSearchCV(model, parameters)
+        else: 
+            clf = GridSearchCV(model, parameters, n_jobs=n_jobs)
+
+        clf.fit(self.context_tensor, self.qpo_tensor)
+
+        results = clf.cv_results_
+
+        scores = results['mean_test_score']
+        params = results['params']
+
+        idx = np.argmax(scores)
+
+        return params[idx], scores, params
 
     ## UTILITY WRAPPERS ## 
 
