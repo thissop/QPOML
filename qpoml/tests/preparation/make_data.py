@@ -1,4 +1,4 @@
-def first_version(observations=100): 
+def first_version_fake_data(observations=100): 
     import numpy as np
     import pandas as pd 
 
@@ -54,9 +54,7 @@ def first_version(observations=100):
     qpo_df.to_csv('./qpoml/tests/current/references/fake_generated_qpos.csv', index=False)
     context_df.to_csv('./qpoml/tests/current/references/fake_generated_spectrum.csv', index=False)
 
-#first_version()
-
-def update_with_scalars(): 
+def fake_context_data_with_scalars(): 
     import pandas as pd 
     import numpy as np
             
@@ -72,9 +70,3 @@ def update_with_scalars():
                              columns=['observation_ID', 'gamma', 'T_in', 'hardness'])
 
     scalar_df.to_csv('./qpoml/tests/current/references/fake_generated_scalar_context.csv', index=False)
-
-#update_with_scalars()
-
-   
-
-        
