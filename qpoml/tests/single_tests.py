@@ -32,14 +32,13 @@ def test_load_basic():
     except: 
         assert False 
 
-def test_evaluation_single(): 
+def test_evaluation_single(base_dir:str='/ar1/PROJ/fjuhsd/personal/thaddaeus/qpo-ml-work/src/QPOML/'): 
     try: 
         from qpoml.main import collection
         import matplotlib.pyplot as plt 
 
-        spectrum_csv = './qpoml/tests/current/references/fake_generated_spectrum.csv'
-        qpo_csv = './qpoml/tests/current/references/fake_generated_qpos.csv'
-
+        spectrum_csv = base_dir+'qpoml/tests/references/fake_generated_spectrum.csv'
+        qpo_csv = base_dir+'qpoml/tests/references/fake_generated_qpos.csv'
         collection_one = collection()
         collection_one.load(qpo_csv=qpo_csv, context_csv=spectrum_csv, context_type='spectrum', context_preprocess='median', 
                             qpo_preprocess={'frequency':[1,16], 'width':[0.1,1.6], 'amplitude':[1,6]}, qpo_approach='single', 
@@ -63,18 +62,18 @@ def test_evaluation_single():
 
         plt.tight_layout()
 
-        plt.savefig('./qpoml/tests/current/outputs/spectrum_input_basic_plots.png', dpi=150)
+        plt.savefig(base_dir+'qpoml/tests/outputs/spectrum_input_basic_plots.png', dpi=150)
         plt.clf()
         plt.close()
 
         fig, ax = plt.subplots(figsize=(6,6))
 
         collection_one.plot_pairplot(ax=ax)
-        plt.savefig('./qpoml/tests/current/outputs/spectrum_input_pair_plot.png', dpi=150)
+        plt.savefig(base_dir+'qpoml/tests/outputs/spectrum_input_pair_plot.png', dpi=150)
         plt.clf()
         plt.close()
 
-        scalar_collection_csv = './qpoml/tests/current/references/fake_generated_scalar_context.csv'
+        scalar_collection_csv = base_dir+'qpoml/tests/references/fake_generated_scalar_context.csv'
         
         collection_two = collection()
         context_dict = {'gamma':[1.0,3.5],'T_in':[0.1,2.5],'hardness':[0,1]}
@@ -97,21 +96,21 @@ def test_evaluation_single():
 
         plt.tight_layout()
 
-        plt.savefig('./qpoml/tests/current/outputs/scalar_input_three_fold_basic_plots_.png', dpi=150)
+        plt.savefig(base_dir+'qpoml/tests/outputs/scalar_input_three_fold_basic_plots_.png', dpi=150)
         plt.clf()
         plt.close()
 
         fig, ax = plt.subplots(figsize=(6,6))
 
         collection_two.plot_pairplot(ax=ax)
-        plt.savefig('./qpoml/tests/current/outputs/scalar_input_three_fold_pair_plot.png', dpi=150)
+        plt.savefig(base_dir+'qpoml/tests/outputs/scalar_input_three_fold_pair_plot.png', dpi=150)
         plt.clf()
         plt.close()
 
         fig, ax = plt.subplots()
 
         collection_two.plot_fold_performance(statistic='mse', ax=ax)
-        plt.savefig('./qpoml/tests/current/outputs/fold_performance_plot_test.png', dpi=150)
+        plt.savefig(base_dir+'qpoml/tests/outputs/fold_performance_plot_test.png', dpi=150)
         plt.clf()
         plt.close()
 
@@ -120,13 +119,15 @@ def test_evaluation_single():
     except: 
         assert False
 
+test_evaluation_single()
+
 def test_categorical_scalar_and_grid_search(): 
     try: 
         from qpoml import collection
         from sklearn.ensemble import RandomForestRegressor
 
-        qpo_csv = './qpoml/tests/current/references/fake_generated_qpos.csv'
-        scalar_collection_csv = './qpoml/tests/current/references/fake_generated_scalar_context_with_categorical.csv'
+        qpo_csv = './qpoml/tests/references/fake_generated_qpos.csv'
+        scalar_collection_csv = './qpoml/tests/references/fake_generated_scalar_context_with_categorical.csv'
         
         collection_two = collection()
         context_dict = {'gamma':[1.0,3.5],'T_in':[0.1,2.5],'qpo_class':'categorical'}
@@ -148,4 +149,4 @@ def test_categorical_scalar_and_grid_search():
     except: 
         assert False 
 
-test_categorical_scalar_and_grid_search()
+#test_categorical_scalar_and_grid_search()
