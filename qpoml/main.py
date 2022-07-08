@@ -33,13 +33,12 @@ class collection:
         self.num_qpos = None  # done
         self.max_simultaneous_qpos = None  # done
         self.qpo_features = None  # done
-        self.qpo_approach = None  # done
 
         ### EVALUATE INITIALIZED  ###
         self.all_train_indices = None  # done
         self.all_test_indices = None  # done
 
-        self.qpo_approach = None  # done
+        self.evaluation_approach = None  # done
 
         self.evaluated_models = None  # done
         self.predictions = None  # done
@@ -54,13 +53,11 @@ class collection:
         self,
         qpo_csv: str,
         context_csv: str,
-        context_type: str,
-        context_preprocess,
         qpo_preprocess: dict,
-        qpo_approach: str = "single",
+        context_preprocess,
+        context_type: str='scalar',
         spectrum_approach: str = "by-row",
-        rebin: int = None,
-    ) -> None:
+        rebin: int = None) -> None:
 
         r"""
         _Class method for loading collection object_
@@ -81,12 +78,6 @@ class collection:
             Fix this
 
         qpo_preprocess : `dict` or `str`
-            Fix this
-
-        qpo_approach : `str`
-            Fix this
-
-        context_approach : `str`
             Fix this
 
         rebin : `int`
@@ -231,11 +222,10 @@ class collection:
 
             qpo_tensor.append(qpo_vector)
 
-        if qpo_approach == "single":
-            # pad with zeros
-            for index, arr in enumerate(qpo_tensor):
-                arr = np.concatenate((arr, np.zeros(shape=max_length - len(arr))))
-                qpo_tensor[index] = arr
+
+        for index, arr in enumerate(qpo_tensor):
+            arr = np.concatenate((arr, np.zeros(shape=max_length - len(arr))))
+            qpo_tensor[index] = arr
 
         qpo_tensor = np.array(qpo_tensor, dtype=object)
 
@@ -245,13 +235,10 @@ class collection:
         self.context_tensor = context_tensor
         self.qpo_tensor = qpo_tensor
         self.max_simultaneous_qpos = max_simultaneous_qpos
-        self.qpo_approach = qpo_approach
         self.context_features = context_features
         self.qpo_features = qpo_features
 
         self.loaded = True
-
-        print(list(set(num_qpos)))
 
     ## EVALUATE ##
     def evaluate(
@@ -261,10 +248,7 @@ class collection:
         evaluation_approach: str,
         test_proportion: float = 0.1,
         folds: int = None,
-        repetitions: int = None,
-        classifier_model: str = None,
-        classifier_model_name=None,
-    ) -> None:
+        repetitions: int = None) -> None:
         r"""
         _Evaluate an already initiated and loaded model_
 
@@ -278,7 +262,7 @@ class collection:
             The name of the model, e.g. 'AdaBoostRegressor'
 
         evaluation_approach : `str`
-            Can be `eurostep` or `single` ... Fix this!
+            Can be `default` or `k-fold` ... Fix this!
 
         test_proportion : `float`
             Default is `0.1`; proportion of values to reserve for test set
@@ -297,120 +281,107 @@ class collection:
         from sklearn.model_selection import train_test_split
 
         random_state = self.random_state
-
-        qpo_approach = self.qpo_approach
-
         context_tensor = self.context_tensor
         qpo_tensor = self.qpo_tensor
 
-        if qpo_approach == "single":
+        all_train_indices = []
+        all_test_indices = []
 
-            all_train_indices = []
-            all_test_indices = []
+        evaluated_models = []
+        predictions = []
 
-            evaluated_models = []
-            predictions = []
+        X_train = []
+        X_test = []
+        y_train = []
+        y_test = []
 
-            X_train = []
-            X_test = []
-            y_train = []
-            y_test = []
+        if evaluation_approach == "k-fold" and folds is not None:
 
-            if evaluation_approach == "k-fold" and folds is not None:
+            if repetitions is None:
+                kf = KFold(n_splits=folds)
 
-                if repetitions is None:
-                    kf = KFold(n_splits=folds)
+            else:
+                from sklearn.model_selection import RepeatedKFold
 
-                else:
-                    from sklearn.model_selection import RepeatedKFold
-
-                    kf = RepeatedKFold(
-                        n_splits=folds, n_repeats=repetitions, random_state=random_state
-                    )
-
-                split = list(kf.split(context_tensor))
-                print(split)
-                train_indices = np.array([i for i, _ in split]).astype(int)
-                test_indices = np.array([i for _, i in split]).astype(int)
-
-                all_train_indices.append(train_indices)
-                all_test_indices.append(test_indices)
-
-                for train_indices_fold, test_indices_fold in zip(
-                    train_indices, test_indices
-                ):
-                    X_train_fold = context_tensor[train_indices_fold]
-                    X_test_fold = context_tensor[test_indices_fold]
-                    y_train_fold = qpo_tensor[train_indices_fold]
-                    y_test_fold = qpo_tensor[test_indices_fold]
-
-                    model_fold = model
-                    model_fold.fit(X_train_fold, y_train_fold)
-                    predictions.append(model_fold.predict(X_test_fold))
-                    evaluated_models.append(model_fold)
-
-                    X_train.append(X_train_fold)
-                    X_test.append(X_test_fold)
-                    y_train.append(y_train_fold)
-                    y_test.append(y_test_fold)
-
-            elif evaluation_approach == "default":
-
-                train_indices_fold, test_indices_fold = train_test_split(
-                    np.arange(0, len(qpo_tensor), 1).astype(int),
-                    random_state=random_state,
+                kf = RepeatedKFold(
+                    n_splits=folds, n_repeats=repetitions, random_state=random_state
                 )
 
-                all_train_indices.append(train_indices_fold)
-                all_test_indices.append(test_indices_fold)
+            split = list(kf.split(context_tensor))
 
+            train_indices = []
+            test_indices = []
+            for tr, te in split: 
+                train_indices.append(tr)
+                test_indices.append(te)
+
+            #train_indices = np.array(train_indices).astype(int)
+            #test_indices = np.array(test_indices).astype(int)
+
+            all_train_indices.append(train_indices)
+            all_test_indices.append(test_indices)
+
+            for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
+                
                 X_train_fold = context_tensor[train_indices_fold]
                 X_test_fold = context_tensor[test_indices_fold]
                 y_train_fold = qpo_tensor[train_indices_fold]
                 y_test_fold = qpo_tensor[test_indices_fold]
 
-                model.fit(X_train_fold, y_train_fold)
-                predictions.append(model.predict(X_test_fold))
-                evaluated_models.append(model)
+                model_fold = model
+                model_fold.fit(X_train_fold, y_train_fold)
+                predictions.append(model_fold.predict(X_test_fold))
+                evaluated_models.append(model_fold)
 
                 X_train.append(X_train_fold)
                 X_test.append(X_test_fold)
                 y_train.append(y_train_fold)
                 y_test.append(y_test_fold)
 
-            else:
-                raise Exception("")
+        elif evaluation_approach == "default":
 
-            self.all_train_indices = all_train_indices
-            self.all_test_indices = all_test_indices
+            train_indices_fold, test_indices_fold = train_test_split(
+                np.arange(0, len(qpo_tensor), 1).astype(int),
+                random_state=random_state,
+            )
 
-            self.evaluated_models = evaluated_models
-            self.predictions = predictions
+            all_train_indices.append(train_indices_fold)
+            all_test_indices.append(test_indices_fold)
 
-            self.X_train = X_train
-            self.X_test = X_test
-            self.y_train = y_train
-            self.y_test = y_test
+            X_train_fold = context_tensor[train_indices_fold]
+            X_test_fold = context_tensor[test_indices_fold]
+            y_train_fold = qpo_tensor[train_indices_fold]
+            y_test_fold = qpo_tensor[test_indices_fold]
 
-        elif qpo_approach == "eurostep":
-            if classifier_model is not None and classifier_model_name is not None:
+            model.fit(X_train_fold, y_train_fold)
+            predictions.append(model.predict(X_test_fold))
+            evaluated_models.append(model)
 
-                if evaluation_approach == "default":
-                    pass
-                elif evaluation_approach == "k-fold" and folds is not None:
-                    pass
-
-            else:
-                raise Exception("")
+            X_train.append(X_train_fold)
+            X_test.append(X_test_fold)
+            y_train.append(y_train_fold)
+            y_test.append(y_test_fold)
 
         else:
             raise Exception("")
 
+        self.evaluation_approach = evaluation_approach
+
+        self.all_train_indices = all_train_indices
+        self.all_test_indices = all_test_indices
+
+        self.evaluated_models = evaluated_models
+        self.predictions = predictions
+
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
+
+        
         # future idea: let users stratify by more than just internal qpo count
 
         ### UPDATE ATTRIBUTES ###
-
-        self.qpo_approach = qpo_approach
 
         self.evaluated = True
 
@@ -419,7 +390,7 @@ class collection:
     # what does sandman mean in the old slang? e.g. in hushaby song
 
     ## UTILITIES ##
-    def performance_statistics(self):
+    def get_performance_statistics(self):
         r"""
         _Return model performance statistics_
 
@@ -439,27 +410,26 @@ class collection:
 
         statistics = {}
 
-        if self.qpo_approach == "single":
-            predictions = self.predictions
-            y_test = self.y_test
+        predictions = self.predictions
+        y_test = self.y_test
 
-            mae = None
-            mse = None
+        mae = None
+        mse = None
 
-            if len(predictions) == 1:
-                predictions = predictions[0].flatten()
-                y_test = y_test[0].flatten()
-                mse = mean_squared_error(y_test, predictions)
-                mae = mean_absolute_error(y_test, predictions)
+        if len(predictions) == 1:
+            predictions = predictions[0].flatten()
+            y_test = y_test[0].flatten()
+            mse = mean_squared_error(y_test, predictions)
+            mae = mean_absolute_error(y_test, predictions)
 
-            else:
+        else:
 
-                mse = []
-                mae = []
+            mse = []
+            mae = []
 
-                for prediction, true in zip(predictions, y_test):
-                    mse.append(mean_squared_error(true, prediction))
-                    mae.append(mean_absolute_error(true, prediction))
+            for prediction, true in zip(predictions, y_test):
+                mse.append(mean_squared_error(true, prediction))
+                mae.append(mean_absolute_error(true, prediction))
 
             statistics["mse"] = mse
             statistics["mae"] = mae
@@ -570,7 +540,7 @@ class collection:
         predictions = self.predictions
         y_test = self.y_test
 
-        if self.qpo_approach == "k-fold" and fold is not None:
+        if self.evaluation_approach == "k-fold" and fold is not None:
             model = model[fold]
             predictions = predictions[fold]
             y_test = y_test[fold]
@@ -587,8 +557,7 @@ class collection:
         return regression_x, regression_y, mb, stats
 
     def feature_importances(
-        self, feature_names: list, kind: str = "kernel-shap", fold: int = None
-    ):
+        self, feature_names: list, kind: str = "kernel-shap", fold: int = None):
         r"""
         fold is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from
         """
@@ -600,7 +569,7 @@ class collection:
         X_test = self.X_test
         y_test = self.y_test
 
-        if self.qpo_approach == "k-fold" and fold is not None:
+        if self.evaluation_approach == "k-fold" and fold is not None:
             model = model[fold]
             X_test = X_test[fold]
             y_test = y_test[fold]
@@ -683,7 +652,7 @@ class collection:
         y_test = self.y_test
         predictions = self.predictions
 
-        if self.qpo_approach == "k-fold" and fold is not None:
+        if self.evaluation_approach == "k-fold" and fold is not None:
             predictions = predictions[fold]
             y_test = y_test[fold]
 
@@ -713,7 +682,7 @@ class collection:
         y_test = self.y_test
         predictions = self.predictions
 
-        if self.qpo_approach == "k-fold" and fold is not None:
+        if self.evaluation_approach == "k-fold" and fold is not None:
             model = model[fold]
             predictions = predictions[fold]
             X_test = X_test[fold]
@@ -772,7 +741,7 @@ class collection:
             np.array([folds, measure]).T, columns=["fold", "measure"]
         )
 
-        plt.plot(folds, measure, "-o")
+        plt.plot(folds, measure, "-o", ms=4)
         ax.set_xlabel("Test Fold")
         ax.set_ylabel("Model " + statistic)
         ax.tick_params(bottom=True, labelbottom=False)

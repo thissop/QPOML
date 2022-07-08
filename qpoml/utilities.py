@@ -308,7 +308,6 @@ def feature_importances(model, X_test, y_test, feature_names:list, kind:str='ker
         for index in range(len(feature_names)): 
             importances_df[feature_names[index]] = [feature_importances_arr[index]]
 
-    print('this is really jank fix it!')
     return feature_importances_arr, feature_names, importances_df
     
 def confusion_matrix(y_test:numpy.array, predictions:numpy.array): 

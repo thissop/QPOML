@@ -4,7 +4,10 @@ import warnings
 import numpy as np
 import seaborn as sns 
 import matplotlib.pyplot as plt 
-plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
+#plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
+
+sns.set_style('ticks')
+sns.set_context("notebook", font_scale=0.9, rc={"font.family": 'serif'})
 
 #plt.style.use('seaborn-darkgrid')
 #plt.rcParams['font.family'] = 'serif'
@@ -24,13 +27,13 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
         internal = True 
 
     if matrix_style=='default': 
-            sns.heatmap(corr, cmap=cmap,
+            sns.heatmap(corr,
                 ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols,
-                xticklabels=cols, cbar_kws={"shrink": .75})
+                xticklabels=cols, cbar_kws={"shrink": .75}, center=0)
 
     elif matrix_style=='steps': 
         mask = np.triu(np.ones_like(corr, dtype=bool))   
-        sns.heatmap(corr, mask=mask, ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols, xticklabels=cols, cbar_kws={"shrink": .75})
+        sns.heatmap(corr, mask=mask, ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols, xticklabels=cols, cbar_kws={"shrink": .75}, center=0.0)
 
     else: 
         raise Exception('')
@@ -154,7 +157,7 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None):
 
     cm, acc = confusion_matrix(y_test=np.array(y_test), predictions=np.array(predictions))
 
-    sns.heatmap(cm, annot=True, cmap=sns.diverging_palette(220, 10, as_cmap=True), linewidths=.5, ax=ax)
+    sns.heatmap(cm, annot=True, center=0.0, linewidths=.5, ax=ax)
     ax.set(xlabel='Actual', ylabel='Predicted')
 
     warnings.warn('replace cmap!')
