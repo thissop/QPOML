@@ -4,13 +4,22 @@ import warnings
 import numpy as np
 import seaborn as sns 
 import matplotlib.pyplot as plt 
+from matplotlib.colors import LinearSegmentedColormap
 #plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
 
-sns.set_style('ticks')
-sns.set_context("notebook", font_scale=0.9, rc={"font.family": 'serif'})
+#sns.set_style('ticks')
+#sns.set_context("notebook", font_scale=0.9, rc={"font.family": 'serif'})
 
 #plt.style.use('seaborn-darkgrid')
 #plt.rcParams['font.family'] = 'serif'
+
+sns.set_style('darkgrid')
+sns.set_context("paper") #font_scale=
+sns.set_palette('deep')
+
+seaborn_colors = sns.color_palette('deep')
+
+bi_cm = LinearSegmentedColormap.from_list("Custom", [seaborn_colors[0], (1,1,1), seaborn_colors[3]], N=20)
 
 ### POST LOAD ### 
 
@@ -18,8 +27,6 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
     from qpoml.utilities import correlation_matrix 
 
     corr, cols = correlation_matrix(data=data)
-
-    cmap = sns.diverging_palette(230, 20, as_cmap=True)
 
     internal = False 
     if ax is None: 
@@ -29,11 +36,13 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
     if matrix_style=='default': 
             sns.heatmap(corr,
                 ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols,
-                xticklabels=cols, cbar_kws={"shrink": .75}, center=0)
+                xticklabels=cols, cbar_kws={"shrink": .75}, center=0.0, cmap=bi_cm)
 
     elif matrix_style=='steps': 
         mask = np.triu(np.ones_like(corr, dtype=bool))   
-        sns.heatmap(corr, mask=mask, ax=ax, annot=True, annot_kws={'fontsize':'small'}, yticklabels=cols, xticklabels=cols, cbar_kws={"shrink": .75}, center=0.0)
+        sns.heatmap(corr, mask=mask, ax=ax, annot=True, annot_kws={'fontsize':'small'},
+                    yticklabels=cols, xticklabels=cols, cbar_kws={"shrink": .75}, center=0.0, 
+                    cmap=bi_cm)
 
     else: 
         raise Exception('')

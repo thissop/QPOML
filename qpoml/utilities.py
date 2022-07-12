@@ -13,32 +13,92 @@ def preprocess1d(x, preprocess):
     r'''
     preprocess : list, str
         If it's a list, then preprocess[0] is min value for norm, and ...[1] is max value for norm 
+
+    Returns 
+    -------
+
+    modified : 
+
+    modification type : str 
+
+    additional output #1
+
+    additional output #2 
+
     '''
-    
+
     if type(preprocess) is list: 
+        
         min_value = preprocess[0]
         max_value = preprocess[1]
         modified = (x-min_value)/(max_value-min_value) 
         modified = modified*(1 - 0.1) + 0.1 # so it will be output as 0.1-1 range 
-    elif type(preprocess) is str: 
+        return modified, ('normalize', min_value, max_value) 
+
+    if type(preprocess) is str: 
+        
         if preprocess == 'as-is': 
             modified = x 
+            return modified, ('as-is', None, None) 
+        
         elif preprocess == 'normalize': 
             min_value = np.min(x)
             max_value = np.max(x)
             modified = (x-min_value)/(max_value-min_value)
             modified = modified*(1 - 0.1) + 0.1
+            return modified, ('normalize', min_value, max_value)
+        
         elif preprocess == 'standardize': 
             mean = np.mean(x)
             sigma = np.std(x)
             modified = (x-mean)/sigma
+            return modified, ('standardize', mean, sigma)
+
         elif preprocess == 'median': 
-            modified = x/np.median(x)
+            median = np.median(x)
+            modified = x/median
+            return modified, ('median', median, None) 
+        
         else: 
             raise Exception('')
     
+        try: 
+             min_value = preprocess[0]
+            max_value = preprocess[1]
+            modified = (x-min_value)/(max_value-min_value) 
+            modified = modified*(1 - 0.1) + 0.1 # so it will be output as 0.1-1 range 
+            return modified, ('normalize', min_value, max_value)
+        except Exception as e: 
+            print(e)
+
     
-    return modified
+def unprocess1d(modified, preprocess1d_output): 
+    method_applied = preprocess1d_output[0]
+
+    x = None 
+
+    if method_applied == 'as-is': 
+        x = modified 
+
+    elif method_applied == 'normalize': 
+        applied_max = preprocess1d_output[2]
+        applied_min = preprocess1d_output[1]
+        x_1 = (modified-0.1)*(1-0.1)
+        x = x_1*(applied_max-applied_min)+applied_min
+        
+    elif method_applied == 'standardize':
+        mean = preprocess1d_output[1]
+        sigma = preprocess1d_output[2]
+        x = (modified*sigma)+mean 
+    
+    elif method_applied == 'median': 
+        x = modified*preprocess1d_output[1]
+
+    else: 
+        raise Exception('')
+
+    return x 
+ 
 
 ### "BORROWED" ###
 
@@ -87,7 +147,10 @@ def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:
             cred_interval = list(posterior.interval(rope[1]))
 
             return first_better_than_second, second_better_than_first, rope_prob, cred_interval
- 
+    
+    else: 
+        raise Exception('')
+
 def corrected_std(differences, n_train, n_test):
     r'''
     _Corrects standard deviation using Nadeau and Bengio's approach_

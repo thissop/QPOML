@@ -35,18 +35,21 @@ class collection:
         self.qpo_features = None  # done
 
         ### EVALUATE INITIALIZED  ###
-        self.all_train_indices = None  # done
-        self.all_test_indices = None  # done
+        self.train_indices = None  # done
+        self.test_indices = None  # done
 
         self.evaluation_approach = None  # done
 
-        self.evaluated_models = None  # done
-        self.predictions = None  # done
+        self.qpo_preprocess = None 
+        self.context_preprocess = None # not really needed so not implemented yet 
 
         self.X_train = None  # done
         self.X_test = None  # done
         self.y_train = None  # done
         self.y_test = None  # done
+
+        self.evaluated_models = None  # done
+        self.predictions = None  # done
 
     ## LOAD ##
     def load(
@@ -201,6 +204,9 @@ class collection:
 
         for qpo_feature in qpo_features:
             if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
+                
+                modified, 
+                
                 qpo_df[qpo_feature] = preprocess1d(
                     x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature]
                 )
@@ -277,15 +283,15 @@ class collection:
         self.check_loaded("evaluate")
         self.dont_do_twice("evaluate")
 
-        from sklearn.model_selection import KFold
-        from sklearn.model_selection import train_test_split
+        from sklearn.model_selection import KFold, train_test_split, cross_val_predict
+
 
         random_state = self.random_state
         context_tensor = self.context_tensor
         qpo_tensor = self.qpo_tensor
 
-        all_train_indices = []
-        all_test_indices = []
+        train_indices = []
+        test_indices = []
 
         evaluated_models = []
         predictions = []
@@ -309,8 +315,6 @@ class collection:
 
             split = list(kf.split(context_tensor))
 
-            train_indices = []
-            test_indices = []
             for tr, te in split: 
                 train_indices.append(tr)
                 test_indices.append(te)
@@ -318,15 +322,11 @@ class collection:
             #train_indices = np.array(train_indices).astype(int)
             #test_indices = np.array(test_indices).astype(int)
 
-            all_train_indices.append(train_indices)
-            all_test_indices.append(test_indices)
-
             for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
-                
-                X_train_fold = context_tensor[train_indices_fold]
-                X_test_fold = context_tensor[test_indices_fold]
-                y_train_fold = qpo_tensor[train_indices_fold]
-                y_test_fold = qpo_tensor[test_indices_fold]
+                X_train_fold = np.array(context_tensor[train_indices_fold])
+                X_test_fold = np.array(context_tensor[test_indices_fold])
+                y_train_fold = np.array(qpo_tensor[train_indices_fold])
+                y_test_fold = np.array(qpo_tensor[test_indices_fold])
 
                 model_fold = model
                 model_fold.fit(X_train_fold, y_train_fold)
@@ -345,9 +345,6 @@ class collection:
                 random_state=random_state,
             )
 
-            all_train_indices.append(train_indices_fold)
-            all_test_indices.append(test_indices_fold)
-
             X_train_fold = context_tensor[train_indices_fold]
             X_test_fold = context_tensor[test_indices_fold]
             y_train_fold = qpo_tensor[train_indices_fold]
@@ -362,13 +359,17 @@ class collection:
             y_train.append(y_train_fold)
             y_test.append(y_test_fold)
 
+            train_indices.append(train_indices_fold)
+            test_indices.append(test_indices)
+
+
         else:
             raise Exception("")
 
         self.evaluation_approach = evaluation_approach
 
-        self.all_train_indices = all_train_indices
-        self.all_test_indices = all_test_indices
+        self.train_indices = train_indices
+        self.test_indices = test_indices
 
         self.evaluated_models = evaluated_models
         self.predictions = predictions
@@ -638,14 +639,8 @@ class collection:
 
     ### POST EVALUATION ###
 
-    def plot_results_regression(
-        self,
-        feature_name: str,
-        which: list,
-        ax=None,
-        xlim: list = [-0.1, 1.1],
-        fold: int = None,
-    ):
+    def plot_results_regression(self,feature_name: str,which: list,ax=None,xlim: list = [-0.1, 1.1],fold: int = None):
+        
         self.check_evaluated("plot_results_regression")
         from qpoml.plotting import plot_results_regression
 
