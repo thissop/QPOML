@@ -173,7 +173,7 @@ class collection:
             else:
                 raise Exception("")
             for index, arr in enumerate(temp_tensor):
-                arr = preprocess1d(arr, context_preprocess)
+                arr, (_, _, _) = preprocess1d(arr, context_preprocess)
                 temp_tensor[index] = arr
             if spectrum_approach == "by-column":
                 context_tensor = np.transpose(temp_tensor)
@@ -186,7 +186,7 @@ class collection:
         else:
             transposed = np.transpose(context_tensor)
             for index, arr in enumerate(transposed):
-                arr = preprocess1d(arr, context_preprocess[context_features[index]])
+                arr, (_, _, _) = preprocess1d(arr, context_preprocess[context_features[index]])
                 transposed[index] = arr
 
             context_tensor = np.transpose(transposed)
@@ -205,11 +205,9 @@ class collection:
         for qpo_feature in qpo_features:
             if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
                 
-                modified, 
-                
-                qpo_df[qpo_feature] = preprocess1d(
-                    x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature]
-                )
+                modified, (_, _, _) = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
+
+                qpo_df[qpo_feature] = modified
 
         for observation_ID in observation_IDs:
             sliced_qpo_df = qpo_df.loc[qpo_df["observation_ID"] == observation_ID]
@@ -437,7 +435,7 @@ class collection:
 
         return statistics
 
-    def grid_search(self, model, parameters: dict, n_jobs: int = None):
+    def gridsearch(self, model, parameters: dict, n_jobs: int = None):
         r"""
         _Run five fold exhaustive grid search for hyperparameter tuning_
 
@@ -460,23 +458,30 @@ class collection:
         from sklearn.model_selection import GridSearchCV
 
         if n_jobs is None:
-            clf = GridSearchCV(model, parameters)
+            clf = GridSearchCV(model, parameters, scoring='neg_mean_absolute_error')
         else:
-            clf = GridSearchCV(model, parameters, n_jobs=n_jobs)
+            clf = GridSearchCV(model, parameters, n_jobs=n_jobs, scoring='neg_mean_absolute_error')
 
         clf.fit(self.context_tensor, self.qpo_tensor)
 
         results = clf.cv_results_
 
-        scores = results["mean_test_score"]
+        scores = np.array(results["mean_test_score"])
+ 
+        stds = results['std_test_score']
         params = results["params"]
 
-        idx = np.argmax(scores)
+        sort_idx = np.argsort(scores)
+        best_params = params[np.argmax(scores)]
 
-        return params[idx], scores, params
+        scores = np.array(scores)[sort_idx]
+        stds = np.array(stds)[sort_idx]
+        params = np.array(params)[sort_idx]
+        
+        return scores, stds, params, best_params
 
     ## UTILITY WRAPPERS ##
-
+    
     ### POST LOAD ###
 
     def correlation_matrix(self):

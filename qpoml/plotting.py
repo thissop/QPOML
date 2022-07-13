@@ -29,9 +29,9 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
     corr, cols = correlation_matrix(data=data)
 
     internal = False 
+
     if ax is None: 
         fig, ax = plt.subplots()
-        internal = True 
 
     if matrix_style=='default': 
             sns.heatmap(corr,
@@ -47,20 +47,17 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
     else: 
         raise Exception('')
 
-    if internal: 
-        plt.show()
+    return ax
 
 def plot_pairplot(data:pandas.DataFrame, steps=False, ax=None): 
 
-    internal = False 
     if ax is None: 
         fig, ax = plt.subplots()
         internal = True 
 
     ax = sns.pairplot(data=data, corner=steps)
     
-    if internal: 
-        plt.show()
+    return ax
 
 def plot_dendrogram(data:pandas.DataFrame, ax=None): 
     from scipy.cluster import hierarchy
@@ -77,7 +74,8 @@ def plot_dendrogram(data:pandas.DataFrame, ax=None):
 
     if internal: 
         plt.tight_layout()
-        plt.show()
+
+    return ax
 
 def plot_vif(data:pandas.DataFrame, cutoff:int=10, ax=None): 
     from qpoml.utilities import calculate_vif 
@@ -95,7 +93,30 @@ def plot_vif(data:pandas.DataFrame, cutoff:int=10, ax=None):
 
     if internal: 
         plt.tight_layout()
-        plt.show()
+
+    return ax
+
+def plot_gridsearch(scores, ax=None):     
+    if ax is None: 
+        fig, ax = plt.subplots(figsize=(4,2))
+
+    scores = np.array(scores)
+    stds = np.array(stds)
+
+    # grid search results plot 
+    sns.set_style('darkgrid')
+    sns.set_context("paper", font_scale=0.5) #font_scale=
+    sns.set_palette('deep')
+
+    fig, ax = plt.subplots(figsize=(4,2))
+    x = np.arange(0,len(scores),1)
+
+    ax.plot(x, np.array(scores))
+    ax.fill_between(x,scores-stds, scores+stds, alpha=0.1, color='cornflowerblue')
+    ax.xaxis.set_ticklabels([])
+    ax.set(ylabel='Score')
+
+    return ax 
 
 ### POST EVALUATION ### 
 
@@ -129,7 +150,8 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
 
     if internal: 
         plt.tight_layout()
-        plt.show()
+        
+    return ax 
 
 def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', ax=None):
     from qpoml.utilities import feature_importances
@@ -154,7 +176,8 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
 
     if internal: 
         plt.tight_layout()
-        plt.show()
+
+    return ax
 
 def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None): 
     from qpoml.utilities import confusion_matrix 
@@ -173,4 +196,5 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None):
 
     if internal: 
         plt.tight_layout()
-        plt.show()
+
+    return ax

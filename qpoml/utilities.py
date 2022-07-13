@@ -63,7 +63,7 @@ def preprocess1d(x, preprocess):
             raise Exception('')
     
         try: 
-             min_value = preprocess[0]
+            min_value = preprocess[0]
             max_value = preprocess[1]
             modified = (x-min_value)/(max_value-min_value) 
             modified = modified*(1 - 0.1) + 0.1 # so it will be output as 0.1-1 range 
@@ -384,24 +384,6 @@ def confusion_matrix(y_test:numpy.array, predictions:numpy.array):
 
     return cm, acc
 
-## CLASSES ## 
-
-class eurostep_model: 
-
-    def __init__(self, regressor, regressor_name:str, classifier, classifier_name:str, context_tensor:np.array, qpo_tensor:np.array) -> None:
-        self.regressor = regressor 
-        self.regressor_name = regressor_name
-        self.classifier = classifier
-        self.classifier_name = classifier_name 
-
-    def return_classifier(self):
-
-        # check if model has been evaluated first!
-        return self.regressor
-
-    def return_classifier(self): 
-        # check if model has been evaluated first! 
-        return self.classifier
 
 ### TO DO ###
 r'''
