@@ -14,7 +14,7 @@ from matplotlib.colors import LinearSegmentedColormap
 #plt.rcParams['font.family'] = 'serif'
 
 sns.set_style('darkgrid')
-sns.set_context("paper") #font_scale=
+sns.set_context("notebook") #font_scale=
 sns.set_palette('deep')
 
 seaborn_colors = sns.color_palette('deep')
@@ -153,29 +153,58 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
         
     return ax 
 
-def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', ax=None):
+def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
+    r'''
+    
+    Arguments
+    ---------
+
+    style : str
+        Depending on the type of feature importances calculated, it can be different plot. If bar, then mean feature importances will be plotted as bar chart. However, if kind is not default, then style can also be 'box', 'violin', 'errorbar'. 
+    
+    cut : float
+        only applicable if style is 'violin' ... from seaborn docs: 'Distance, in units of bandwidth size, to extend the density past the extreme datapoints. Set to 0 to limit the violin range within the range of the observed data (i.e., to have the same effect as trim=True in ggplot.'
+    
+    sigma : float 
+        only applicable if style is 'errorbar' ... sigma used in calculating errorbars 
+    
+    '''
+    
     from qpoml.utilities import feature_importances
 
-    internal = False 
     if ax is None: 
         fig, ax = plt.subplots()
-        internal = True 
+   
+    mean_importances_df, importances_df  = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind)
     
-    feature_importances_arr, _, importances_df = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind)
-    if importances_df is None or kind in ['tree-shap', 'kernel-shap']: # fix this! return errs! fix that in calculate feature importances! 
-        ax.barh(feature_names, feature_importances_arr)
-        ax.set(xlabel='Feature Importance')
+    if kind=='default' and style!='bar':
+        raise Exception('')
 
-        warnings.warn('need to set ')
+    if kind=='default' or style=='bar': 
+        sns.barplot(data=mean_importances_df, ax=ax)
+
+    elif importances_df is not None: 
+        if style == 'violin':
+            sns.violinplot(data=importances_df, ax=ax, cut=cut)
+        elif style == 'box':
+            sns.boxplot(data=importances_df, ax=ax) # 
+        elif style == 'errorbar':
+            thickness = plt.rcParams['axes.linewidth']
+
+            cols = list(importances_df)
+            ax.errorbar(x=cols,
+                        y=[np.mean(importances_df[i]) for i in cols], 
+                        yerr=[sigma*np.std(importances_df[i]) for i in cols], 
+                        lw=0, elinewidth=thickness, capsize=3*thickness, marker='o')
+
+        else: 
+            raise Exception('')
 
     else: 
         ax.boxplot(importances_df)
         ax.set_xticklabels(list(importances_df)) 
 
-    ax.set(ylabel='Feature Name')
-
-    if internal: 
-        plt.tight_layout()
+    ax.set(ylabel='Feature Name', xlabel='Feature Importance')
 
     return ax
 

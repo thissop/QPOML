@@ -585,11 +585,11 @@ class collection:
             X_test = X_test[0]
             y_test = y_test[0]
 
-        feature_importances_arr, feature_names, importances_df = feature_importances(
-            model, X_test, y_test, feature_names=feature_names, kind=kind
+        mean_importances_df, importances_df = feature_importances(
+            model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind
         )
 
-        return feature_importances_arr, feature_names, importances_df
+        return mean_importances_df, importances_df
 
     def get_data(self):
         return self.X_train, self.X_test, self.y_train, self.y_test
@@ -671,9 +671,8 @@ class collection:
             xlim=xlim,
         )
 
-    def plot_feature_importances(
-        self, kind: str = "kernel-shap", ax=None, fold: int = None
-    ):
+    def plot_feature_importances(self, model, fold:int=None, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
+        
         self.check_evaluated("plot_feature_importances")
         from qpoml.plotting import plot_feature_importances
 
@@ -696,14 +695,7 @@ class collection:
 
         feature_names = self.context_features
 
-        plot_feature_importances(
-            model=model,
-            X_test=X_test,
-            y_test=y_test,
-            feature_names=feature_names,
-            kind=kind,
-            ax=ax,
-        )
+        plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, style=style, ax=ax, cut=cut, sigma=sigma)
 
     def plot_fold_performance(self, statistic: str = "mae", ax=None):
         r"""
