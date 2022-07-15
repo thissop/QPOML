@@ -27,14 +27,6 @@ def preprocess1d(x, preprocess):
 
     '''
 
-    if type(preprocess) is list: 
-        
-        min_value = preprocess[0]
-        max_value = preprocess[1]
-        modified = (x-min_value)/(max_value-min_value) 
-        modified = modified*(1 - 0.1) + 0.1 # so it will be output as 0.1-1 range 
-        return modified, ('normalize', min_value, max_value) 
-
     if type(preprocess) is str: 
         
         if preprocess == 'as-is': 
@@ -62,6 +54,7 @@ def preprocess1d(x, preprocess):
         else: 
             raise Exception('')
     
+    else: 
         try: 
             min_value = preprocess[0]
             max_value = preprocess[1]
@@ -99,12 +92,10 @@ def unprocess1d(modified, preprocess1d_output):
 
     return x 
  
-
 ### "BORROWED" ###
 
 def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:int, n_test:int, approach:str, rope:list=[[-0.01, 0.01], 0.95]):
     r'''
-    
     Parameters
     ----------
     first_scores : 
@@ -317,61 +308,66 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list,
 
     return regression_x, regression_y, linregress_result 
     
-def feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap'):
+def feature_importances(model, X_test, y_test, feature_names, kind:str='kernel-shap'):
     
     import shap
+    import pandas as pd
     
-    importances_df = None
-    shap_values = None
-    feature_importances_arr = None
+    importances_df = None 
+    mean_importances_df = None 
+    shap_values = None 
     sort_idx = None 
+
+    feature_names = np.array(feature_names)
 
     if kind=='default':
         if hasattr(model, 'feature_importances_'): 
-            feature_importances_arr = model.feature_importances_
+            mean_importances = model.feature_importances_
+            sort_idx = np.argsort(mean_importances)[::-1]
+        else: 
+            raise Exception('')
                 
     elif kind=='permutation': 
-        
         from sklearn.inspection import permutation_importance
 
         permutation_importances = permutation_importance(estimator=model, X=X_test, y=y_test)
-        feature_importances_arr = permutation_importances['importances_mean']
-
-        sort_idx = np.argsort(feature_importances_arr)[::-1]
-
-        importances_df = pd.DataFrame(permutation_importances.importances[sort_idx].T, columns=feature_names[sort_idx])
         
-    elif kind=='kernel-shap': 
-        warnings.warn('need to implement check to see if model is supported')
-        explainer = shap.KernelExplainer(model.predict, X_test)
-        shap_values = explainer.shap_values(X_test)
-        shap_values = np.array(shap_values).T
-        feature_importances_arr = np.array([np.mean(np.abs(i)) for i in shap_values])
+        mean_importances = permutation_importances.importances_mean 
 
-    elif kind=='tree-shap': 
-        warnings.warn('need to check if possible!')
-        explainer = shap.TreeExplainer(model)
-        shap_values = np.array(explainer.shap_values(X_test))
-        shap_values = np.array(shap_values).T
-        feature_importances_arr = np.array([np.mean(np.abs(i)) for i in shap_values])
+        sort_idx = np.argsort(mean_importances)[::-1]
+        importances_df = pd.DataFrame(permutation_importances.importances[sort_idx].T, columns=feature_names[sort_idx])
+
+    elif kind=='kernel-shap' or kind=='tree-shap': 
+        
+        if kind=='kernel-shap':
+            explainer = shap.Explainer(model,X_test)
+        else: 
+            explainer = shap.TreeExplainer(model, data=X_test)
+
+        shap_values = explainer(X_test).values.T
+
+        absolute_arrays = np.array([np.abs(i) for i in shap_values])
+
+        if len(absolute_arrays.shape)>2: 
+            absolute_arrays = np.concatenate(absolute_arrays, axis=1)
+
+        mean_importances = np.mean(absolute_arrays, axis=1)
+        sort_idx = np.argsort(mean_importances)[::-1]
+
+        importances_df = pd.DataFrame(np.transpose(absolute_arrays[sort_idx]), columns=feature_names[sort_idx])
 
     else: 
         raise Exception('')
 
-    if sort_idx is None: 
-        sort_idx = np.argsort(feature_importances_arr)[::-1]
-
     sort_idx = sort_idx.astype(int)
+    mean_importances = mean_importances[sort_idx]
+    feature_names = feature_names[sort_idx]
 
-    feature_importances_arr = feature_importances_arr[sort_idx]
-    feature_names = np.array(feature_names)[sort_idx]
+    mean_importances_df = pd.DataFrame()
+    for index in range(len(feature_names)): 
+        mean_importances_df[feature_names[index]] = [mean_importances[index]]
 
-    if kind=='tree-shap' or kind=='kernel-shap': 
-        importances_df = pd.DataFrame()
-        for index in range(len(feature_names)): 
-            importances_df[feature_names[index]] = [feature_importances_arr[index]]
-
-    return feature_importances_arr, feature_names, importances_df
+    return mean_importances_df, importances_df 
     
 def confusion_matrix(y_test:numpy.array, predictions:numpy.array): 
     from sklearn.metrics import confusion_matrix, accuracy_score
