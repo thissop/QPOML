@@ -1,3 +1,4 @@
+from tkinter import N
 import numpy as np
 import numpy 
 import pandas as pd
@@ -8,22 +9,12 @@ import warnings
 
 ### BASIC ###
 
-def preprocess1d(x, preprocess): 
-    
+def preprocess1d(x, preprocess, range_low:float=0.1, range_high:float=1.0): 
+
     r'''
-    preprocess : list, str
-        If it's a list, then preprocess[0] is min value for norm, and ...[1] is max value for norm 
-
-    Returns 
-    -------
-
-    modified : 
-
-    modification type : str 
-
-    additional output #1
-
-    additional output #2 
+    
+    range_low, range_high : float, float 
+        feature range that inputs are mapped to. default is 0.1 to 1.0 
 
     '''
 
@@ -37,7 +28,7 @@ def preprocess1d(x, preprocess):
             min_value = np.min(x)
             max_value = np.max(x)
             modified = (x-min_value)/(max_value-min_value)
-            modified = modified*(1 - 0.1) + 0.1
+            modified = modified*(range_high - range_low) + range_low
             return modified, ('normalize', min_value, max_value)
         
         elif preprocess == 'standardize': 
@@ -59,14 +50,14 @@ def preprocess1d(x, preprocess):
             min_value = preprocess[0]
             max_value = preprocess[1]
             modified = (x-min_value)/(max_value-min_value) 
-            modified = modified*(1 - 0.1) + 0.1 # so it will be output as 0.1-1 range 
+            modified = modified*(range_high - range_low) + range_low # so it will be output as 0.1-1 range 
             return modified, ('normalize', min_value, max_value)
         except Exception as e: 
             print(e)
-
     
-def unprocess1d(modified, preprocess1d_output): 
-    method_applied = preprocess1d_output[0]
+def unprocess1d(modified, preprocess1d_tuple, range_low:float=0.1, range_high:float=1.0): 
+    
+    method_applied = preprocess1d_tuple[0]
 
     x = None 
 
@@ -74,18 +65,18 @@ def unprocess1d(modified, preprocess1d_output):
         x = modified 
 
     elif method_applied == 'normalize': 
-        applied_max = preprocess1d_output[2]
-        applied_min = preprocess1d_output[1]
-        x_1 = (modified-0.1)*(1-0.1)
-        x = x_1*(applied_max-applied_min)+applied_min
+        applied_max = preprocess1d_tuple[2]
+        applied_min = preprocess1d_tuple[1]
+        
+        x = (((modified-range_low)/(range_high-range_low))*(applied_max-applied_min))+applied_min # sheeesh
         
     elif method_applied == 'standardize':
-        mean = preprocess1d_output[1]
-        sigma = preprocess1d_output[2]
+        mean = preprocess1d_tuple[1] 
+        sigma = preprocess1d_tuple[2] 
         x = (modified*sigma)+mean 
     
     elif method_applied == 'median': 
-        x = modified*preprocess1d_output[1]
+        x = modified*preprocess1d_tuple[1] 
 
     else: 
         raise Exception('')
@@ -255,8 +246,8 @@ def calculate_vif(data:pandas.DataFrame):
 
 ### POST EVALUATION ### 
 
-def results_regression(y_test:numpy.array, predictions:numpy.array, which:list, 
-                       regression_x:numpy.array=None, regression_y:numpy.array=None): # will work best with result vectors of my design 
+def results_regression(y_test:numpy.array, predictions:numpy.array, which:list, preprocess1d_tuple:tuple, 
+                       regression_x=None, regression_y=None): # will work best with result vectors of my design 
     r'''
     
     Execute "results regression" on predictions based on their true values.  
@@ -272,6 +263,9 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list,
 
     which : list 
         List of pythonic indices corresponding to the value(s) in the `y_test`/`predictions` vectors upon which `results_regression` should be run; e.g. if QPO vector is `[frequency,width,amplitude]`, `what=[0]` will run `results_regression` on frequency only because only the zeroth item in every predicted vector, the QPO frequency in this case, will be concatenated to the flattened arrays for regression. Similarly, if the QPO prediction vectors followed the form `[First QPO Frequency, First QPO Width, Second QPO Frequency, Second QPO Width]`, `what=[0,2]` would compute `results_regression` on only a concatenated array of First and Second QPO Frequencies.      
+
+    preprocess1d_tuple : tuple 
+        the second thing returned by preprocess1d; only one is provided for both x and y because both should be un-processed in the same way. 
 
     Returns
     -------
@@ -294,15 +288,20 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list,
     '''
     
     from scipy.stats import linregress 
-    
+    from qpoml.utilities import unprocess1d 
+     
     if regression_x is None and regression_y is None: 
         regression_x = np.transpose(np.array(y_test))
         regression_y = np.transpose(np.array(predictions))
 
         regression_x, regression_y = (i[which] for i in (regression_x, regression_y)) 
+        regression_x = unprocess1d(regression_x, preprocess1d_tuple)
+        regression_y = unprocess1d(regression_y, preprocess1d_tuple)
 
     regression_x = regression_x.flatten().astype(float)
     regression_y = regression_y.flatten().astype(float)
+
+    
 
     linregress_result = linregress(regression_x, regression_y) 
 
@@ -380,6 +379,44 @@ def confusion_matrix(y_test:numpy.array, predictions:numpy.array):
 
     return cm, acc
 
+### MULTI-MODEL RELATED ###
+
+def bulk_load(n:int, qpo_csv:str, context_csv:str, qpo_preprocess:str, context_preprocess, context_type:str='scalar', spectrum_approach:str='by-row', rebin:int=None):
+    r'''
+    initialize multiple identical qpoml collection objects
+    '''
+
+    from qpoml import collection 
+
+    loaded_collections = []
+
+    for i in range(n): 
+        c = None 
+        c = collection()
+        c.load(qpo_csv=qpo_csv, context_csv=context_csv, context_type=context_type, context_preprocess=context_preprocess,
+               qpo_preprocess=qpo_preprocess, spectrum_approach=spectrum_approach, rebin=rebin)
+
+        loaded_collections.append(c)
+    
+    return loaded_collections
+
+### XSPEC RELATED ###
+'''
+def calculate_hardness(spectrum:xspec.Spectrum, soft_range:list, hard_range:list, calculation:str='proportion'):
+    spectrum.ignore('**-'+str(soft_range[0]))
+    spectrum.ignore(str(soft_range[1])+'-**')
+    soft_sum = np.sum(spectrum.values)
+
+    spectrum.notice('**-**')
+    spectrum.ignore('**-'+str(hard_range[0]))
+    spectrum.ignore(str(hard_range[1])+'-**')
+    hard_sum = np.sum(spectrum.values)
+
+    if calculation == 'proportion':
+        return hard_sum/(soft_sum+hard_sum) 
+    elif calculation == 'ratio':
+        return hard_sum/soft_sum
+'''
 
 ### TO DO ###
 r'''

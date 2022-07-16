@@ -44,6 +44,12 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
                     yticklabels=cols, xticklabels=cols, cbar_kws={"shrink": .75}, center=0.0, 
                     cmap=bi_cm)
 
+    elif matrix_style=='with-dendrogram':
+        ax = sns.clustermap(corr, center=0, cmap=bi_cm,
+                   dendrogram_ratio=(.1, .2),
+                   linewidths=.75, cbar_pos=(1, .2, .03, .4), 
+                   row_cluster=False, metric='correlation')
+
     else: 
         raise Exception('')
 
@@ -71,7 +77,7 @@ def plot_dendrogram(data:pandas.DataFrame, ax=None):
         internal = True 
 
     hierarchy.dendrogram(dist_linkage, labels=cols, ax=ax, leaf_rotation=90)
-
+    ax.set(xlabel='Pairwise Correlation')
     if internal: 
         plt.tight_layout()
 
@@ -120,15 +126,16 @@ def plot_gridsearch(scores, ax=None):
 
 ### POST EVALUATION ### 
 
-def plot_results_regression(y_test, predictions, feature_name:str, which:list, ax=None, xlim:list=[-0.1,1.1], 
+def plot_results_regression(y_test, predictions, feature_name:str, which:list, ax=None, upper_lim_factor:float=1.025, 
                             regression_x:numpy.array=None, regression_y:numpy.array=None):
    
     from qpoml.utilities import results_regression 
     
     if regression_x is None and regression_y is None: 
         regression_x, regression_y, linregress_result = results_regression(y_test=y_test, predictions=predictions, which=which)
+    
     else: 
-        _, _, linregress_result = results_regression(regression_x=regression_x, regression_y=regression_y, which=None, y_test=None, predictions=None)
+        _, _, linregress_result = results_regression(regression_x=regression_x, regression_y=regression_y, which=None, y_test=None, predictions=None, preprocess1d_tuple=None)
     
     internal = False 
     if ax is None: 
@@ -143,9 +150,12 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
     ax.scatter(regression_x, regression_y)
     r_sq = str(round(r**2, 2))
     label = 'Best Fit ('r'$r^2=$'+' '+r_sq+', m='+str(round(m, 2))+r'$\pm$'+stderr 
-    ax.plot(np.array(xlim), m*np.array(xlim)+b, label=label) # math in equations! set that globally! 
+    
+    limits = [-0.1, upper_lim_factor*np.max(np.concatenate((regression_x, regression_y)))]
+    
+    ax.plot(np.array(limits), m*np.array(limits)+b, label=label) # math in equations! set that globally! 
     ax.axline(xy1=(0,0), slope=1)
-    ax.set(xlim=xlim, ylim=xlim, xlabel='True '+feature_name, ylabel='Predicted '+feature_name)
+    ax.set(xlim=limits, ylim=limits, xlabel='True '+feature_name, ylabel='Predicted '+feature_name)
     ax.legend()
 
     if internal: 
@@ -153,7 +163,7 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
         
     return ax 
 
-def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
+def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2, fold=None):
     r'''
     
     Arguments
@@ -175,19 +185,19 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     if ax is None: 
         fig, ax = plt.subplots()
    
-    mean_importances_df, importances_df  = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind)
+    mean_importances_df, importances_df  = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, fold=fold)
     
     if kind=='default' and style!='bar':
         raise Exception('')
 
     if kind=='default' or style=='bar': 
-        sns.barplot(data=mean_importances_df, ax=ax)
+        sns.barplot(data=mean_importances_df, ax=ax, color=seaborn_colors[0])
 
     elif importances_df is not None: 
         if style == 'violin':
-            sns.violinplot(data=importances_df, ax=ax, cut=cut)
+            sns.violinplot(data=importances_df, ax=ax, cut=cut, color=seaborn_colors[0])
         elif style == 'box':
-            sns.boxplot(data=importances_df, ax=ax) # 
+            sns.boxplot(data=importances_df, ax=ax, color=seaborn_colors[0]) # 
         elif style == 'errorbar':
             thickness = plt.rcParams['axes.linewidth']
 
@@ -195,7 +205,8 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
             ax.errorbar(x=cols,
                         y=[np.mean(importances_df[i]) for i in cols], 
                         yerr=[sigma*np.std(importances_df[i]) for i in cols], 
-                        lw=0, elinewidth=thickness, capsize=3*thickness, marker='o')
+                        lw=0, elinewidth=thickness, capsize=3*thickness, marker='o', 
+                        color=seaborn_colors[0])
 
         else: 
             raise Exception('')

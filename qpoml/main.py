@@ -12,6 +12,7 @@ class collection:
     # REQUIRED #
 
     ## INITIALIZE ##
+
     def __init__(self, random_state: int = 42) -> None:
 
         ### global ###
@@ -34,6 +35,8 @@ class collection:
         self.max_simultaneous_qpos = None  # done
         self.qpo_features = None  # done
 
+        self.qpo_preprocess1d_tuples = None # done
+
         ### EVALUATE INITIALIZED  ###
         self.train_indices = None  # done
         self.test_indices = None  # done
@@ -52,6 +55,7 @@ class collection:
         self.predictions = None  # done
 
     ## LOAD ##
+
     def load(
         self,
         qpo_csv: str,
@@ -202,12 +206,20 @@ class collection:
         max_length = max_simultaneous_qpos * len(qpo_features)
         qpo_tensor = []
 
+        qpo_preprocess1d_tuples = {}
+
         for qpo_feature in qpo_features:
             if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
                 
-                modified, (_, _, _) = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
+                modified, preprocess1d_tuple = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
 
                 qpo_df[qpo_feature] = modified
+
+                qpo_preprocess1d_tuples[qpo_feature] = preprocess1d_tuple
+
+        self.qpo_preprocess1d_tuples = qpo_preprocess1d_tuples
+
+
 
         for observation_ID in observation_IDs:
             sliced_qpo_df = qpo_df.loc[qpo_df["observation_ID"] == observation_ID]
@@ -245,6 +257,7 @@ class collection:
         self.loaded = True
 
     ## EVALUATE ##
+
     def evaluate(
         self,
         model,
@@ -389,6 +402,7 @@ class collection:
     # what does sandman mean in the old slang? e.g. in hushaby song
 
     ## UTILITIES ##
+
     def get_performance_statistics(self):
         r"""
         _Return model performance statistics_
@@ -537,7 +551,19 @@ class collection:
 
     ### POST EVALUATION ###
 
-    def results_regression(self, which: list, fold: int = None):
+    def results_regression(self, feature_name:str, which: list, fold: int = None):
+
+        r'''
+        
+        Arguments
+        ---------
+
+        feature_name : str
+            Since preprocessing is handled under the hood within the collection class, users won't have access to their preprocess1d tuples. Thus, they need to also give the name of the feature (e.g. 'frequency') so this method can locate a saved copy of the preprocess1d tuple that matches with an output QPO feature that was registered when the collection object was loaded.
+
+        '''
+
+
         from qpoml.utilities import results_regression
 
         self.check_evaluated("feature_importances")
@@ -556,11 +582,10 @@ class collection:
             predictions = predictions[0]
             y_test = y_test[0]
 
-        regression_x, regression_y, mb, stats = results_regression(
-            regression_x=y_test, regression_y=predictions, which=which
-        )
+        regression_x, regression_y, linregress_result = results_regression(y_test=y_test, predictions=predictions, which=which, 
+                                                                   preprocess1d_tuple=self.qpo_preprocess1d_tuples[feature_name])
 
-        return regression_x, regression_y, mb, stats
+        return regression_x, regression_y, linregress_result
 
     def feature_importances(
         self, feature_names: list, kind: str = "kernel-shap", fold: int = None):
@@ -644,7 +669,7 @@ class collection:
 
     ### POST EVALUATION ###
 
-    def plot_results_regression(self,feature_name: str,which: list,ax=None,xlim: list = [-0.1, 1.1],fold: int = None):
+    def plot_results_regression(self, feature_name:str, which:list, ax = None, upper_lim_factor:float=1.025, fold:int = None):
         
         self.check_evaluated("plot_results_regression")
         from qpoml.plotting import plot_results_regression
@@ -660,15 +685,17 @@ class collection:
             predictions = predictions[0]
             y_test = y_test[0]
 
+        regression_x, regression_y, _, = self.results_regression(feature_name=feature_name, which=which, fold=fold)
+        
         plot_results_regression(
-            regression_x=y_test,
-            regression_y=predictions,
+            regression_x=regression_x,
+            regression_y=regression_y,
             y_test=None,
-            predictions=predictions,
+            predictions=None,
             feature_name=feature_name,
-            which=which,
+            which=None,
             ax=ax,
-            xlim=xlim,
+            upper_lim_factor=upper_lim_factor,
         )
 
     def plot_feature_importances(self, model, fold:int=None, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
@@ -682,10 +709,12 @@ class collection:
         predictions = self.predictions
 
         if self.evaluation_approach == "k-fold" and fold is not None:
-            model = model[fold]
-            predictions = predictions[fold]
-            X_test = X_test[fold]
-            y_test = y_test[fold]
+            
+            if fold is int: 
+                model = model[fold]
+                predictions = predictions[fold]
+                X_test = X_test[fold]
+                y_test = y_test[fold]
 
         else:
             model = model[0]
@@ -695,7 +724,7 @@ class collection:
 
         feature_names = self.context_features
 
-        plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, style=style, ax=ax, cut=cut, sigma=sigma)
+        plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, style=style, ax=ax, cut=cut, sigma=sigma, fold=fold)
 
     def plot_fold_performance(self, statistic: str = "mae", ax=None):
         r"""
@@ -744,6 +773,7 @@ class collection:
             plt.show()
 
     ## GOTCHAS ##
+    
     def check_loaded(self, function: str):
         if not self.loaded:
             raise Exception(
