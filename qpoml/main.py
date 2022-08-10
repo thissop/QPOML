@@ -264,7 +264,8 @@ class collection:
         evaluation_approach: str,
         test_proportion: float = 0.1,
         folds: int = None,
-        repetitions: int = None) -> None:
+        repetitions: int = None, 
+        hyperparameter_dictionary:dict=None) -> None:
         r"""
         _Evaluate an already initiated and loaded model_
 
@@ -272,10 +273,7 @@ class collection:
         ----------
 
         model : `object`
-            A initialized regressor object from another class, e.g. sklearn
-
-        model_name : `str`
-            The name of the model, e.g. 'AdaBoostRegressor'
+            An initialized regressor object from another class, e.g. sklearn. It will be cloned and then have parameters reset, so it's okay (it's actually nesessary) that it is initalized
 
         evaluation_approach : `str`
             Can be `default` or `k-fold` ... Fix this!
@@ -293,7 +291,8 @@ class collection:
         self.check_loaded("evaluate")
         self.dont_do_twice("evaluate")
 
-        from sklearn.model_selection import KFold, train_test_split, cross_val_predict
+        import sklearn 
+        from sklearn.model_selection import KFold, train_test_split
 
         random_state = self.random_state
         context_tensor = self.context_tensor
@@ -336,11 +335,15 @@ class collection:
                 X_test_fold = np.array(context_tensor[test_indices_fold])
                 y_train_fold = np.array(qpo_tensor[train_indices_fold])
                 y_test_fold = np.array(qpo_tensor[test_indices_fold])
+                
+                local_model = sklearn.base.clone(model)
 
-                model_fold = model
-                model_fold.fit(X_train_fold, y_train_fold)
-                predictions.append(model_fold.predict(X_test_fold))
-                evaluated_models.append(model_fold)
+                if hyperparameter_dictionary is not None:
+                    local_model = local_model.set_params(**hyperparameter_dictionary)
+                
+                local_model.fit(X_train_fold, y_train_fold)
+                predictions.append(local_model.predict(X_test_fold))
+                evaluated_models.append(local_model)
 
                 X_train.append(X_train_fold)
                 X_test.append(X_test_fold)
@@ -356,9 +359,14 @@ class collection:
             y_train_fold = qpo_tensor[train_indices_fold]
             y_test_fold = qpo_tensor[test_indices_fold]
 
-            model.fit(X_train_fold, y_train_fold)
-            predictions.append(model.predict(X_test_fold))
-            evaluated_models.append(model)
+            local_model = sklearn.base.clone(model)
+
+            if hyperparameter_dictionary is not None:
+                local_model = local_model.set_params(**hyperparameter_dictionary)
+
+            local_model.fit(X_train_fold, y_train_fold)
+            predictions.append(local_model.predict(X_test_fold))
+            evaluated_models.append(local_model)
 
             X_train.append(X_train_fold)
             X_test.append(X_test_fold)
@@ -367,7 +375,6 @@ class collection:
 
             train_indices.append(train_indices_fold)
             test_indices.append(test_indices)
-
 
         else:
             raise Exception("")
@@ -385,7 +392,6 @@ class collection:
         self.y_train = y_train
         self.y_test = y_test
 
-        
         # future idea: let users stratify by more than just internal qpo count
 
         ### UPDATE ATTRIBUTES ###
@@ -480,8 +486,8 @@ class collection:
         stds = results['std_test_score']
         params = results["params"]
 
-        sort_idx = np.argsort(scores)
-        best_params = params[np.argmax(scores)]
+        sort_idx = np.argsort(results['rank_test_score'])
+        best_params = clf.best_params_
 
         scores = np.array(scores)[sort_idx]
         stds = np.array(stds)[sort_idx]
@@ -582,11 +588,11 @@ class collection:
 
         return regression_x, regression_y, linregress_result
 
-    def feature_importances(
-        self, feature_names: list, kind: str = "kernel-shap", fold: int = None):
+    def feature_importances(self, feature_names: list, kind: str = "kernel-shap", fold: int = None):
         r"""
         fold is if the user previously chose to do k-fold cross validation, 0 index of models to select feature importances from
         """
+
         from qpoml.utilities import feature_importances
 
         self.check_evaluated("feature_importances")
@@ -605,9 +611,7 @@ class collection:
             X_test = X_test[0]
             y_test = y_test[0]
 
-        mean_importances_df, importances_df = feature_importances(
-            model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind
-        )
+        mean_importances_df, importances_df = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind)
 
         return mean_importances_df, importances_df
 
@@ -704,22 +708,16 @@ class collection:
         predictions = self.predictions
 
         if self.evaluation_approach == "k-fold" and fold is not None:
-            
-            if fold is int: 
-                model = model[fold]
-                predictions = predictions[fold]
-                X_test = X_test[fold]
-                y_test = y_test[fold]
+            feature_names = self.context_features
 
-        else:
-            model = model[0]
-            predictions = predictions[0]
-            X_test = X_test[0]
-            y_test = y_test[0]
+            mean_importances_df, importances_df = self.feature_importances(feature_names=feature_names, kind=kind, fold=fold)
 
-        feature_names = self.context_features
+            plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, 
+                                     kind=kind, style=style, ax=ax, cut=cut, sigma=sigma, 
+                                     mean_importances_df=mean_importances_df, importances_df=importances_df)
 
-        plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, style=style, ax=ax, cut=cut, sigma=sigma, fold=fold)
+        else: 
+            print('error!')
 
     def plot_fold_performance(self, statistic: str = "mae", ax=None):
         r"""

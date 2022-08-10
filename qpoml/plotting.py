@@ -164,7 +164,9 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
         
     return ax 
 
-def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2, fold=None):
+def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', 
+                             style:str='bar', ax=None, cut:float=2, sigma:float=2, 
+                             mean_importances_df:pandas.DataFrame=None, importances_df:pandas.DataFrame=None):
     r'''
     
     Arguments
@@ -185,8 +187,9 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
 
     if ax is None: 
         fig, ax = plt.subplots()
-   
-    mean_importances_df, importances_df  = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind, fold=fold)
+    
+    if mean_importances_df is None or importances_df is None: 
+        mean_importances_df, importances_df  = feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, kind=kind)
     
     if kind=='default' and style!='bar':
         raise Exception('')
@@ -264,7 +267,10 @@ def plot_model_comparison(model_names:list, performance_lists:list, metric:str, 
     if ax is None: 
         fig, ax = plt.subplots()
 
-    df = pd.DataFrame(list(zip(performance_lists)), columns=model_names)
+    df = pd.DataFrame()
+    for i in range(len(performance_lists)):
+        df[model_names[i]] = performance_lists[i]
+
 
     if style == 'violin':
         sns.violinplot(data=df, ax=ax, cut=cut, color=seaborn_colors[0])

@@ -111,7 +111,7 @@ def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:
     dof = len(differences)-1
 
     if approach == 'frequentist': 
-        t_stat, p_val = compute_corrected_ttest(differences=differences, df=dof, n_train=n_train, n_test=n_test)
+        t_stat, p_val = compute_corrected_ttest(differences=differences, n_train=n_train, n_test=n_test)
         return t_stat, p_val
 
     elif approach == 'bayesian': 
@@ -337,9 +337,9 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='kernel-s
     elif kind=='kernel-shap' or kind=='tree-shap': 
         
         if kind=='kernel-shap':
-            explainer = shap.Explainer(model,X_test)
+            explainer = shap.Explainer(model,X_test, check_additivity=False)
         else: 
-            explainer = shap.TreeExplainer(model, data=X_test)
+            explainer = shap.TreeExplainer(model, data=X_test, check_additivity=False)
 
         shap_values = explainer(X_test).values.T
 
