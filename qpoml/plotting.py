@@ -2,6 +2,7 @@ import numpy
 import pandas 
 import warnings
 import numpy as np
+import pandas as pd 
 import seaborn as sns 
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LinearSegmentedColormap
@@ -236,5 +237,52 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None):
 
     if internal: 
         plt.tight_layout()
+
+    return ax
+
+# External Utilities # 
+
+def plot_model_comparison(model_names:list, performance_lists:list, metric:str, style:str='box', ax=None, cut:float=2, sigma:float=2):
+    r'''
+    Arguments
+    ---------
+
+    metric : str
+        Name of the metric used to evaluate the models. 
+
+    style : str
+        'box', 'violin', or 'errorbar' 
+    
+    cut : float
+        only applicable if style is 'violin' ... from seaborn docs: 'Distance, in units of bandwidth size, to extend the density past the extreme datapoints. Set to 0 to limit the violin range within the range of the observed data (i.e., to have the same effect as trim=True in ggplot.'
+    
+    sigma : float 
+        only applicable if style is 'errorbar' ... sigma used in calculating errorbars 
+    
+    '''
+
+    if ax is None: 
+        fig, ax = plt.subplots()
+
+    df = pd.DataFrame(list(zip(performance_lists)), columns=model_names)
+
+    if style == 'violin':
+        sns.violinplot(data=df, ax=ax, cut=cut, color=seaborn_colors[0])
+    elif style == 'box':
+        sns.boxplot(data=df, ax=ax, color=seaborn_colors[0]) # 
+    elif style == 'errorbar':
+        thickness = plt.rcParams['axes.linewidth']
+
+        cols = list(df)
+        ax.errorbar(x=cols,
+                    y=[np.mean(df[i]) for i in cols], 
+                    yerr=[sigma*np.std(df[i]) for i in cols], 
+                    lw=0, elinewidth=thickness, capsize=3*thickness, marker='o', 
+                    color=seaborn_colors[0])
+
+    else: 
+        raise Exception('')
+
+    ax.set(ylabel=metric)
 
     return ax

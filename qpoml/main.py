@@ -261,7 +261,6 @@ class collection:
     def evaluate(
         self,
         model,
-        model_name,
         evaluation_approach: str,
         test_proportion: float = 0.1,
         folds: int = None,
@@ -295,7 +294,6 @@ class collection:
         self.dont_do_twice("evaluate")
 
         from sklearn.model_selection import KFold, train_test_split, cross_val_predict
-
 
         random_state = self.random_state
         context_tensor = self.context_tensor
@@ -351,10 +349,7 @@ class collection:
 
         elif evaluation_approach == "default":
 
-            train_indices_fold, test_indices_fold = train_test_split(
-                np.arange(0, len(qpo_tensor), 1).astype(int),
-                random_state=random_state,
-            )
+            train_indices_fold, test_indices_fold = train_test_split(np.arange(0, len(qpo_tensor), 1).astype(int), test_size=test_proportion, random_state=random_state)
 
             X_train_fold = context_tensor[train_indices_fold]
             X_test_fold = context_tensor[test_indices_fold]

@@ -163,7 +163,7 @@ def corrected_std(differences, n_train, n_test):
     corrected_std = np.sqrt(corrected_var)
     return corrected_std
 
-def compute_corrected_ttest(differences, df, n_train, n_test):
+def compute_corrected_ttest(differences, n_train, n_test):
     r'''
     _Computes right-tailed paired t-test with corrected variance._
 
@@ -171,8 +171,6 @@ def compute_corrected_ttest(differences, df, n_train, n_test):
     ----------
     differences : array-like of shape (n_samples,)
         Vector containing the differences in the score metrics of two models.
-    df : int
-        Degrees of freedom.
     n_train : int
         Number of samples in the training set.
     n_test : int
@@ -192,6 +190,8 @@ def compute_corrected_ttest(differences, df, n_train, n_test):
     '''
 
     from scipy.stats import t
+
+    df = n_test-1
 
     mean = np.mean(differences)
     std = corrected_std(differences, n_train, n_test)
@@ -300,8 +300,6 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list, 
 
     regression_x = regression_x.flatten().astype(float)
     regression_y = regression_y.flatten().astype(float)
-
-    
 
     linregress_result = linregress(regression_x, regression_y) 
 
