@@ -4,7 +4,6 @@ import warnings
 import numpy as np
 import pandas as pd
 
-
 class collection:
 
     qpo_reserved_words = ["observation_ID", "order"]
@@ -23,6 +22,8 @@ class collection:
         self.evaluated = False  # accounted for
 
         self.observation_IDs = None  # done
+
+        self.units = None # done 
 
         self.context_is_spectrum = False  # done
         self.context_tensor = None  # done
@@ -64,6 +65,7 @@ class collection:
         context_preprocess,
         context_type: str='scalar',
         spectrum_approach: str = "by-row",
+        units:dict=None, 
         rebin: int = None) -> None:
 
         r"""
@@ -219,8 +221,6 @@ class collection:
 
         self.qpo_preprocess1d_tuples = qpo_preprocess1d_tuples
 
-
-
         for observation_ID in observation_IDs:
             sliced_qpo_df = qpo_df.loc[qpo_df["observation_ID"] == observation_ID]
             sliced_qpo_df = sliced_qpo_df.sort_values(by="frequency")
@@ -238,7 +238,6 @@ class collection:
 
             qpo_tensor.append(qpo_vector)
 
-
         for index, arr in enumerate(qpo_tensor):
             arr = np.concatenate((arr, np.zeros(shape=max_length - len(arr))))
             qpo_tensor[index] = arr
@@ -253,6 +252,8 @@ class collection:
         self.max_simultaneous_qpos = max_simultaneous_qpos
         self.context_features = context_features
         self.qpo_features = qpo_features
+
+        self.units = units
 
         self.loaded = True
 
@@ -686,16 +687,9 @@ class collection:
 
         regression_x, regression_y, _, = self.results_regression(feature_name=feature_name, which=which, fold=fold)
         
-        plot_results_regression(
-            regression_x=regression_x,
-            regression_y=regression_y,
-            y_test=None,
-            predictions=None,
-            feature_name=feature_name,
-            which=None,
-            ax=ax,
-            upper_lim_factor=upper_lim_factor,
-        )
+        unit = self.units[feature_name]
+
+        plot_results_regression(regression_x=regression_x, regression_y=regression_y, y_test=None, predictions=None, feature_name=feature_name, unit=unit, which=None, ax=ax, upper_lim_factor=upper_lim_factor)
 
     def plot_feature_importances(self, model, fold:int=None, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
         
