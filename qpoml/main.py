@@ -52,6 +52,9 @@ class collection:
         self.y_train = None  # done
         self.y_test = None  # done
 
+        self.train_observationIDs = None 
+        self.test_observationIDs = None
+
         self.evaluated_models = None  # done
         self.predictions = None  # done
 
@@ -298,6 +301,7 @@ class collection:
         random_state = self.random_state
         context_tensor = self.context_tensor
         qpo_tensor = self.qpo_tensor
+        observation_IDs = np.array(self.observation_IDs)
 
         train_indices = []
         test_indices = []
@@ -309,6 +313,9 @@ class collection:
         X_test = []
         y_train = []
         y_test = []
+
+        train_observation_IDs = []
+        test_observation_IDs = []
 
         if evaluation_approach == "k-fold" and folds is not None:
 
@@ -351,6 +358,9 @@ class collection:
                 y_train.append(y_train_fold)
                 y_test.append(y_test_fold)
 
+                train_observation_IDs.append(observation_IDs[train_indices_fold])
+                test_observation_IDs.append(observation_IDs[test_indices_fold])
+
         elif evaluation_approach == "default":
 
             train_indices_fold, test_indices_fold = train_test_split(np.arange(0, len(qpo_tensor), 1).astype(int), test_size=test_proportion, random_state=random_state)
@@ -377,6 +387,9 @@ class collection:
             train_indices.append(train_indices_fold)
             test_indices.append(test_indices)
 
+            train_observation_IDs.append(observation_IDs[train_indices_fold])
+            test_observation_IDs.append(observation_IDs[test_indices_fold])
+
         else:
             raise Exception("")
 
@@ -392,6 +405,9 @@ class collection:
         self.X_test = X_test
         self.y_train = y_train
         self.y_test = y_test
+
+        self.train_observation_IDs = train_observation_IDs
+        self.test_observation_IDs = test_observation_IDs
 
         # future idea: let users stratify by more than just internal qpo count
 
