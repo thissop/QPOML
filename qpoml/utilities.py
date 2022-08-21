@@ -398,6 +398,11 @@ def bulk_load(n:int, qpo_csv:str, context_csv:str, qpo_preprocess:str, context_p
     
     return loaded_collections
 
+### RANDOM ###
+
+def lorentzian(frequencies, f, width, amplitude):
+    return amplitude*(width/(2*3.1415659265))/((frequencies-f)**2+(width/2)**2)
+
 ### XSPEC RELATED ###
 '''
 def calculate_hardness(spectrum:xspec.Spectrum, soft_range:list, hard_range:list, calculation:str='proportion'):

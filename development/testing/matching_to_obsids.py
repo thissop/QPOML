@@ -79,6 +79,8 @@ print(out_df)
 
 out_df.to_csv('/mnt/c/Users/Research/Documents/GitHub/QPOML/development/testing/matching_to_obsids/fold=9.csv', index=False)
 
+print(collec.qpo_preprocess1d_tuples)
+
 r'''
 50703-01-67-00 looks good
 '''
