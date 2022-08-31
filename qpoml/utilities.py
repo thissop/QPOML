@@ -377,6 +377,15 @@ def confusion_matrix(y_test:numpy.array, predictions:numpy.array):
 
     return cm, acc
 
+def roc_and_auc(y_test:numpy.array, predictions:numpy.array): 
+    from sklearn.metrics import roc_curve
+    from sklearn.metrics import auc 
+
+    fpr, tpr, thresholds = roc_curve(y_test, predictions)
+    auc_score = auc(fpr, tpr)
+
+    return fpr, tpr, auc_score
+
 ### MULTI-MODEL RELATED ###
 
 def bulk_load(n:int, qpo_csv:str, context_csv:str, qpo_preprocess:str, context_preprocess, context_type:str='scalar', spectrum_approach:str='by-row', rebin:int=None):

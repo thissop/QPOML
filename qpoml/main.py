@@ -1,3 +1,4 @@
+from tkinter import N
 import numpy
 import pandas
 import warnings
@@ -38,6 +39,8 @@ class collection:
 
         self.qpo_preprocess1d_tuples = None # done
 
+        self.classification_or_regression = None # done 
+
         ### EVALUATE INITIALIZED  ###
         self.train_indices = None  # done
         self.test_indices = None  # done
@@ -66,6 +69,7 @@ class collection:
         context_csv: str,
         qpo_preprocess: dict,
         context_preprocess,
+        approach:str,
         context_type: str='scalar',
         spectrum_approach: str = "by-row",
         units:dict=None, 
@@ -88,6 +92,9 @@ class collection:
 
         context_preprocess : `dict` or `str`
             Fix this
+
+        approach : str
+            Either "regression" or "classification" 
 
         qpo_preprocess : `dict` or `str`
             Fix this
@@ -202,63 +209,74 @@ class collection:
 
         ### QPO ###
 
-        num_qpos = []
-
         qpo_df = pd.read_csv(qpo_csv)
-        qpo_features = [i for i in list(qpo_df) if i not in self.qpo_reserved_words]
-
-        max_simultaneous_qpos = Counter(qpo_df["observation_ID"]).most_common(1)[0][1]
-        max_length = max_simultaneous_qpos * len(qpo_features)
         qpo_tensor = []
+        
+        if approach == 'regression':
+            num_qpos = []
+            qpo_features = [i for i in list(qpo_df) if i not in self.qpo_reserved_words]
 
-        qpo_preprocess1d_tuples = {}
+            max_simultaneous_qpos = Counter(qpo_df["observation_ID"]).most_common(1)[0][1]
+            max_length = max_simultaneous_qpos * len(qpo_features)
 
-        for qpo_feature in qpo_features:
-            if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
-                
-                modified, preprocess1d_tuple = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
+            qpo_preprocess1d_tuples = {}
 
-                qpo_df[qpo_feature] = modified
+            for qpo_feature in qpo_features:
+                if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
+                    
+                    modified, preprocess1d_tuple = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
 
-                qpo_preprocess1d_tuples[qpo_feature] = preprocess1d_tuple
+                    qpo_df[qpo_feature] = modified
 
-        self.qpo_preprocess1d_tuples = qpo_preprocess1d_tuples
+                    qpo_preprocess1d_tuples[qpo_feature] = preprocess1d_tuple
 
-        for observation_ID in observation_IDs:
-            sliced_qpo_df = qpo_df.loc[qpo_df["observation_ID"] == observation_ID]
-            sliced_qpo_df = sliced_qpo_df.sort_values(by="frequency")
+            self.qpo_preprocess1d_tuples = qpo_preprocess1d_tuples
 
-            num_qpos.append(len(sliced_qpo_df.index))
+            for observation_ID in observation_IDs:
+                sliced_qpo_df = qpo_df.loc[qpo_df["observation_ID"] == observation_ID]
+                sliced_qpo_df = sliced_qpo_df.sort_values(by="frequency")
 
-            if "order" in list(sliced_qpo_df):
-                sliced_qpo_df = sliced_qpo_df.sort_values(by="order")
-                sliced_qpo_df = sliced_qpo_df.drop(columns=["order"])
+                num_qpos.append(len(sliced_qpo_df.index))
 
-            # keep track of reserved words
-            qpo_vector = np.array(
-                sliced_qpo_df.drop(columns=["observation_ID"])
-            ).flatten()
+                if "order" in list(sliced_qpo_df):
+                    sliced_qpo_df = sliced_qpo_df.sort_values(by="order")
+                    sliced_qpo_df = sliced_qpo_df.drop(columns=["order"])
 
-            qpo_tensor.append(qpo_vector)
+                # keep track of reserved words
+                qpo_vector = np.array(
+                    sliced_qpo_df.drop(columns=["observation_ID"])
+                ).flatten()
 
-        for index, arr in enumerate(qpo_tensor):
-            arr = np.concatenate((arr, np.zeros(shape=max_length - len(arr))))
-            qpo_tensor[index] = arr
+                qpo_tensor.append(qpo_vector)
 
-        qpo_tensor = np.array(qpo_tensor, dtype=object)
+            for index, arr in enumerate(qpo_tensor):
+                arr = np.concatenate((arr, np.zeros(shape=max_length - len(arr))))
+                qpo_tensor[index] = arr
+
+            qpo_tensor = np.array(qpo_tensor, dtype=object)
+            self.qpo_features = qpo_features
+            self.max_simultaneous_qpos = max_simultaneous_qpos
+            self.num_qpos = num_qpos
+
+        else: 
+            # trust they are in the same order for now, force later
+            qpo_columns = np.array(list(qpo_df))
+            class_column = qpo_columns[qpo_columns!='observation_ID'][0]
+            qpo_tensor = np.array(qpo_df[class_column])
+            qpo_tensor = qpo_tensor.reshape(qpo_tensor.shape[0], 1)
+            qpo_tensor = np.array(qpo_df[class_column])
 
         ### UPDATE ATTRIBUTES ###
         self.observation_IDs = observation_IDs
-        self.num_qpos = num_qpos
+        
         self.context_tensor = context_tensor
-        self.qpo_tensor = qpo_tensor
-        self.max_simultaneous_qpos = max_simultaneous_qpos
         self.context_features = context_features
-        self.qpo_features = qpo_features
+        self.qpo_tensor = qpo_tensor
 
         self.units = units
 
         self.loaded = True
+        self.classification_or_regression = approach 
 
     ## EVALUATE ##
 
@@ -302,6 +320,7 @@ class collection:
         context_tensor = self.context_tensor
         qpo_tensor = self.qpo_tensor
         observation_IDs = np.array(self.observation_IDs)
+        classification_or_regression = self.classification_or_regression
 
         train_indices = []
         test_indices = []
@@ -350,7 +369,10 @@ class collection:
                     local_model = local_model.set_params(**hyperparameter_dictionary)
                 
                 local_model.fit(X_train_fold, y_train_fold)
-                predictions.append(local_model.predict(X_test_fold))
+                prediction = local_model.predict(X_test_fold)
+                if classification_or_regression == 'classification':
+                    prediction = np.array(prediction).flatten()
+                predictions.append(prediction)
                 evaluated_models.append(local_model)
 
                 X_train.append(X_train_fold)
@@ -376,7 +398,10 @@ class collection:
                 local_model = local_model.set_params(**hyperparameter_dictionary)
 
             local_model.fit(X_train_fold, y_train_fold)
-            predictions.append(local_model.predict(X_test_fold))
+            prediction = local_model.predict(X_test_fold)
+            if classification_or_regression == 'classification': 
+                prediction = np.array(prediction).flatten()
+            predictions.append(prediction)
             evaluated_models.append(local_model)
 
             X_train.append(X_train_fold)
@@ -729,6 +754,8 @@ class collection:
         else: 
             print('error!')
 
+    # FIX FOLD PERFORMANCE ! #
+
     def plot_fold_performance(self, statistic: str = "mae", ax=None):
         r"""
         _Class method for visualizing predictive performance across different folds of test data_
@@ -774,6 +801,70 @@ class collection:
         if internal:
             plt.tight_layout()
             plt.show()
+
+    #### CLASSIFICATION ####
+
+    def roc_and_auc(self): 
+        r'''
+        
+        Notes
+        -----
+
+        - Portions of this routine were taken from an sklearn documentation example that can be found at this [link](https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html?highlight=roc+curve)
+
+        '''
+
+        from qpoml.utilities import roc_and_auc
+        from sklearn.metrics import roc_curve, auc
+
+        self.check_evaluated('roc_and_auc')
+
+        if self.classification_or_regression=='classification': 
+            predictions = self.predictions
+            y_test = self.y_test 
+
+            std_tpr = None
+            std_auc = None
+
+            if len(predictions)>2: 
+                mean_fpr = np.linspace(0, 1, 100)
+                tprs = []
+                aucs = []
+                
+                for i in range(len(predictions)): 
+                    true = y_test[i]
+                    pred = predictions[i]
+
+                    print(true, pred)
+
+                    fpr, tpr, _ = roc_curve(true, pred)
+                    if len(tpr)==np.sum(np.isfinite(tpr)):
+                        auc_value = auc(fpr, tpr)
+
+                        interp_tpr = np.interp(mean_fpr, fpr, tpr)
+                        #print(interp_tpr)
+                        interp_tpr[0] = 0.0
+                        tprs.append(interp_tpr)
+
+                        aucs.append(auc_value)
+
+                mean_tpr = np.mean(tprs, axis=0)
+                mean_tpr[-1] = 1.0
+                std_tpr = np.std(tprs, axis=0)
+                mean_auc = auc(mean_fpr, mean_tpr)
+                std_auc = np.std(aucs)
+
+                fpr = mean_fpr
+                tpr = mean_tpr
+                auc = mean_auc
+
+            else: 
+                fpr, tpr, auc = roc_and_auc(y_test[0], predictions[0])
+
+            return fpr, tpr, std_tpr, auc, std_auc
+
+        else: 
+            raise Exception('')
 
     ## GOTCHAS ##
     

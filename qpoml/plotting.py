@@ -227,6 +227,8 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
 
     return ax
 
+#### CLASSIFICATION ####
+
 def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None): 
     from qpoml.utilities import confusion_matrix 
 
@@ -247,6 +249,49 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None):
 
     return ax
 
+def plot_roc(fpr:np.array, tpr:np.array, auc:float, std_auc:float=None, std_tpr:float=None, ax=None):
+    '''
+    
+    Notes
+    -----
+
+    - Portions of this routine were modified from an sklearn documentation example that can be found at this [link](https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html?highlight=roc+curve)
+
+    '''
+
+    if ax is None: 
+        fig, ax = plt.subplots()
+
+
+    ax.plot([0, 1], [0, 1], linestyle="--", lw=2, color="r", label="Chance", alpha=0.8)
+
+    if std_auc is not None: 
+        roc_label = r"Mean ROC (AUC = %0.2f $\pm$ %0.2f)" % (auc, std_auc)
+    else: 
+        roc_label = 'ROC (AUC = %0.2f )' % auc
+
+    ax.plot(fpr,tpr,color="b", label=roc_label, lw=2, alpha=0.8)
+
+    if std_tpr is not None: 
+        tprs_upper = np.minimum(tpr + std_tpr, 1)
+        tprs_lower = np.maximum(tpr - std_tpr, 0)
+        ax.fill_between(
+            fpr,
+            tprs_lower,
+            tprs_upper,
+            color="grey",
+            alpha=0.2,
+            label=r"$\pm$ 1 std. dev.",
+        )
+
+    ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05])
+    ax.legend(loc="lower right", fontsize='xx-small')
+
+    return ax 
+
+    plt.clf()
+    plt.close() 
+    
 # External Utilities # 
 
 def plot_model_comparison(model_names:list, performance_lists:list, metric:str, style:str='box', ax=None, cut:float=2, sigma:float=2, ylabel:str='Median Absolute Error'):

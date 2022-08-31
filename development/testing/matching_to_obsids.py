@@ -54,7 +54,6 @@ gridsearch_scores.append(scores)
 
 collec.evaluate(model=model, evaluation_approach='k-fold', folds=10, repetitions=2, hyperparameter_dictionary=best_params) # evaluate-approach???
 
-
 y_test = collec.y_test[9]
 predictions = collec.predictions[9]
 test_observation_IDs = collec.test_observation_IDs[9]
