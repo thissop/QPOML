@@ -67,9 +67,9 @@ class collection:
         self,
         qpo_csv: str,
         context_csv: str,
-        qpo_preprocess: dict,
         context_preprocess,
         approach:str,
+        qpo_preprocess=None,
         context_type: str='scalar',
         spectrum_approach: str = "by-row",
         units:dict=None, 
@@ -97,7 +97,7 @@ class collection:
             Either "regression" or "classification" 
 
         qpo_preprocess : `dict` or `str`
-            Fix this
+            Fix this. If none but approach is regression, then all features will be "locally" min-max normalized. 
 
         rebin : `int`
             Defaults to `None`. If set to integer, spectrum will be rebinned such that it contains `rebin` channels.
@@ -224,7 +224,14 @@ class collection:
             for qpo_feature in qpo_features:
                 if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
                     
-                    modified, preprocess1d_tuple = preprocess1d(x=qpo_df[qpo_feature], preprocess=qpo_preprocess[qpo_feature])
+                    preprocess_method = None 
+
+                    if qpo_preprocess is None: 
+                        preprocess_method = 'normalize'
+                    else: 
+                        preprocess_method = qpo_preprocess[qpo_feature]
+
+                    modified, preprocess1d_tuple = preprocess1d(x=qpo_df[qpo_feature], preprocess=preprocess_method)
 
                     qpo_df[qpo_feature] = modified
 
@@ -261,10 +268,11 @@ class collection:
         else: 
             # trust they are in the same order for now, force later
             qpo_columns = np.array(list(qpo_df))
-            class_column = qpo_columns[qpo_columns!='observation_ID'][0]
-            qpo_tensor = np.array(qpo_df[class_column])
-            qpo_tensor = qpo_tensor.reshape(qpo_tensor.shape[0], 1)
-            qpo_tensor = np.array(qpo_df[class_column])
+            class_column_name = qpo_columns[qpo_columns!='observation_ID'][0]
+            temp_merged = qpo_df.merge(pd.read_csv(context_csv), on='observation_ID') # make sure they're in same order. do something similiar for regression? 
+            #qpo_tensor = np.array(qpo_df[class_column])
+            #qpo_tensor = qpo_tensor.reshape(qpo_tensor.shape[0], 1)
+            qpo_tensor = np.array(temp_merged[class_column_name]) # ravel/reshape this? 
 
         ### UPDATE ATTRIBUTES ###
         self.observation_IDs = observation_IDs
@@ -287,7 +295,8 @@ class collection:
         test_proportion: float = 0.1,
         folds: int = None,
         repetitions: int = None, 
-        hyperparameter_dictionary:dict=None) -> None:
+        hyperparameter_dictionary:dict=None,
+        stratify:bool=True) -> None:
         r"""
         _Evaluate an already initiated and loaded model_
 
@@ -306,15 +315,26 @@ class collection:
         folds : `int`
             Default is `None`; if set to some integer, the model will be validated via K-Fold validation, with `K=folds`
 
+        stratify : bool 
+            if True (default) stratifies splitting on class output vector 
+
         Returns
         -------
+
+        Notes / To-Do 
+        -----
+
+        - Need to implement stratify for reg!
+
+        - fix classification_or_regression to easier format (e.g. boolean) 
+
         """
 
         self.check_loaded("evaluate")
         self.dont_do_twice("evaluate")
 
         import sklearn 
-        from sklearn.model_selection import KFold, train_test_split
+        from sklearn.model_selection import train_test_split, KFold, StratifiedKFold, RepeatedStratifiedKFold 
 
         random_state = self.random_state
         context_tensor = self.context_tensor
@@ -339,16 +359,27 @@ class collection:
         if evaluation_approach == "k-fold" and folds is not None:
 
             if repetitions is None:
-                kf = KFold(n_splits=folds)
+                if classification_or_regression == 'classification' and stratify: 
+                    
+                    kf = StratifiedKFold(n_splits=folds) 
+                    split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
+
+                else: 
+                    kf = KFold(n_splits=folds)
+                    split = list(kf.split(context_tensor))
 
             else:
                 from sklearn.model_selection import RepeatedKFold
 
-                kf = RepeatedKFold(
-                    n_splits=folds, n_repeats=repetitions, random_state=random_state
-                )
+                if classification_or_regression == 'classification' and stratify: 
 
-            split = list(kf.split(context_tensor))
+                    kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
+                    split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
+
+                else: 
+
+                    kf = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                    split = list(kf.split(context_tensor))
 
             for tr, te in split: 
                 train_indices.append(tr)
@@ -370,8 +401,10 @@ class collection:
                 
                 local_model.fit(X_train_fold, y_train_fold)
                 prediction = local_model.predict(X_test_fold)
+
                 if classification_or_regression == 'classification':
                     prediction = np.array(prediction).flatten()
+
                 predictions.append(prediction)
                 evaluated_models.append(local_model)
 
@@ -384,8 +417,14 @@ class collection:
                 test_observation_IDs.append(observation_IDs[test_indices_fold])
 
         elif evaluation_approach == "default":
+            
+            temp_idx_arr = np.arange(0, len(qpo_tensor), 1).astype(int)
 
-            train_indices_fold, test_indices_fold = train_test_split(np.arange(0, len(qpo_tensor), 1).astype(int), test_size=test_proportion, random_state=random_state)
+            if classification_or_regression == 'classification' and stratify: 
+                train_indices_fold, test_indices_fold = train_test_split(temp_idx_arr, test_size=test_proportion, random_state=random_state, stratify=qpo_tensor)
+            
+            else: 
+                train_indices_fold, test_indices_fold = train_test_split(temp_idx_arr, test_size=test_proportion, random_state=random_state)
 
             X_train_fold = context_tensor[train_indices_fold]
             X_test_fold = context_tensor[test_indices_fold]
@@ -463,32 +502,63 @@ class collection:
         self.check_loaded_evaluated("performance_statistics")
 
         from sklearn.metrics import mean_absolute_error, mean_squared_error
+        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+        classification_or_regression = self.classification_or_regression
 
         statistics = {}
 
         predictions = self.predictions
         y_test = self.y_test
 
-        mae = None
-        mse = None
-
         if len(predictions) == 1:
             predictions = predictions[0].flatten()
             y_test = y_test[0].flatten()
-            mse = mean_squared_error(y_test, predictions)
-            mae = mean_absolute_error(y_test, predictions)
+
+            if classification_or_regression == 'classification':
+        
+                statistics['accuracy'] = [accuracy_score(y_test, predictions)]
+                statistics['precision'] = [precision_score(y_test, predictions)]
+                statistics['recall'] = [recall_score(y_test, predictions)]
+                statistics['f1'] = [f1_score(y_test, predictions)]
+
+
+            else: 
+                
+                statistics["mse"] = [mean_squared_error(y_test, predictions)]
+                statistics["mae"] = [mean_absolute_error(y_test, predictions)]
 
         else:
+            
+            if classification_or_regression == 'classification':
 
-            mse = []
-            mae = []
+                accuracy = []
+                precision = []
+                recall = []
+                f1 = []
 
-            for prediction, true in zip(predictions, y_test):
-                mse.append(mean_squared_error(true, prediction))
-                mae.append(mean_absolute_error(true, prediction))
+                for true, prediction in zip(y_test, predictions):
+                    accuracy.append(accuracy_score(y_test, predictions))
+                    precision.append(precision_score(y_test, predictions))
+                    recall.append(recall_score(y_test, predictions))
+                    f1.append(f1_score(y_test, predictions))
 
-            statistics["mse"] = mse
-            statistics["mae"] = mae
+                statistics['accuracy'] = accuracy 
+                statistics['precision'] = precision
+                statistics['recall'] = recall
+                statistics['f1'] = f1 
+
+            else: 
+
+                mse = []
+                mae = []
+
+                for true, prediction in zip(y_test, predictions):
+                    mse.append(mean_squared_error(true, prediction))
+                    mae.append(mean_absolute_error(true, prediction))
+
+                statistics["mse"] = mse
+                statistics["mae"] = mae
 
         return statistics
 
@@ -508,16 +578,33 @@ class collection:
         Returns
         -------
 
+        Notes / To-Do 
+        -------------
+
+        - need to fix scoring so users can set  
+
         """
 
         self.check_loaded("grid_search")
 
         from sklearn.model_selection import GridSearchCV
 
+
+        classification_or_regression = self.classification_or_regression
+
         if n_jobs is None:
-            clf = GridSearchCV(model, parameters, scoring='neg_mean_absolute_error')
+            if classification_or_regression == 'classification':
+                clf = GridSearchCV(model, parameters, scoring='f1')
+
+            else: 
+                clf = GridSearchCV(model, parameters, scoring='neg_mean_absolute_error')
+        
         else:
-            clf = GridSearchCV(model, parameters, n_jobs=n_jobs, scoring='neg_mean_absolute_error')
+            if classification_or_regression == 'classification':
+                clf = GridSearchCV(model, parameters, n_jobs=n_jobs, scoring='f1')
+
+            else: 
+                clf = GridSearchCV(model, parameters, n_jobs=n_jobs, scoring='neg_mean_absolute_error')
 
         clf.fit(self.context_tensor, self.qpo_tensor)
 
@@ -865,6 +952,32 @@ class collection:
 
         else: 
             raise Exception('')
+
+    def plot_confusion_matrix(self, fold:int=None, ax=None):
+        self.check_evaluated('plot_confusion_matrix')
+
+        from qpoml.plotting import plot_confusion_matrix
+
+        if self.classification_or_regression == 'classification':
+            
+            y_test = self.y_test
+            predictions = self.predictions 
+
+            if fold is not None: 
+                y_test = y_test[fold]
+                predictions = predictions[0]
+            
+            else: 
+                y_test = y_test[0]
+                predictions = predictions[0]
+            
+            ax = plot_confusion_matrix(y_test, predictions, ax=ax)
+            return ax 
+
+        else: 
+            raise Exception('')
+
+        
 
     ## GOTCHAS ##
     
