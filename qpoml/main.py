@@ -5,6 +5,9 @@ import warnings
 import numpy as np
 import pandas as pd
 
+np.set_printoptions(suppress=True)
+
+
 class collection:
 
     qpo_reserved_words = ["observation_ID", "order"]
@@ -268,11 +271,17 @@ class collection:
         else: 
             # trust they are in the same order for now, force later
             qpo_columns = np.array(list(qpo_df))
+            
+            qpo_df = context_df.merge(qpo_df, on='observation_ID')
+
+            qpo_df = qpo_df[qpo_columns]
+
             class_column_name = qpo_columns[qpo_columns!='observation_ID'][0]
-            temp_merged = qpo_df.merge(pd.read_csv(context_csv), on='observation_ID') # make sure they're in same order. do something similiar for regression? 
+
+            #temp_merged = pd.read_csv(context_csv).merge(qpo_df, on='observation_ID') # make sure they're in same order. do something similiar for regression? 
             #qpo_tensor = np.array(qpo_df[class_column])
             #qpo_tensor = qpo_tensor.reshape(qpo_tensor.shape[0], 1)
-            qpo_tensor = np.array(temp_merged[class_column_name]) # ravel/reshape this? 
+            qpo_tensor = np.array(qpo_df[class_column_name]) # ravel/reshape this? 
 
         ### UPDATE ATTRIBUTES ###
         self.observation_IDs = observation_IDs
@@ -360,7 +369,9 @@ class collection:
 
             if repetitions is None:
                 if classification_or_regression == 'classification' and stratify: 
-                    
+
+                    # CONFIRMED IT GOES HERE! #
+
                     kf = StratifiedKFold(n_splits=folds) 
                     split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
 
@@ -372,6 +383,7 @@ class collection:
                 from sklearn.model_selection import RepeatedKFold
 
                 if classification_or_regression == 'classification' and stratify: 
+
 
                     kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
                     split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
@@ -389,6 +401,7 @@ class collection:
             #test_indices = np.array(test_indices).astype(int)
 
             for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
+                print('splitting')
                 X_train_fold = np.array(context_tensor[train_indices_fold])
                 X_test_fold = np.array(context_tensor[test_indices_fold])
                 y_train_fold = np.array(qpo_tensor[train_indices_fold])
