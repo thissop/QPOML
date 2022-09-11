@@ -4,17 +4,18 @@ import warnings
 import numpy as np
 import pandas as pd 
 import seaborn as sns 
+import matplotlib as mpl 
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LinearSegmentedColormap
-#plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
+plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
 
 #sns.set_style('ticks')
 #sns.set_context("notebook", font_scale=0.9, rc={"font.family": 'serif'})
 
 #plt.style.use('seaborn-darkgrid')
 #plt.rcParams['font.family'] = 'serif'
-sns.set_style('darkgrid')
-plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
+#sns.set_style('darkgrid')
+#plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
 sns.set_context("paper") #font_scale=
 sns.set_palette('deep')
 seaborn_colors = sns.color_palette('deep')
@@ -23,6 +24,7 @@ plt.rcParams['font.family'] = 'serif'
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
 bi_cm = LinearSegmentedColormap.from_list("Custom", [seaborn_colors[0], (1,1,1), seaborn_colors[3]], N=20)
+bi_cm_r = LinearSegmentedColormap.from_list("Custom", [seaborn_colors[3], (1,1,1), seaborn_colors[0]], N=20)
 
 ### POST LOAD ### 
 
@@ -229,8 +231,13 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
 
 #### CLASSIFICATION ####
 
-def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None): 
+def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, auc:float=None, ax=None, cbar:bool=False, labels:list=None): 
     from qpoml.utilities import confusion_matrix 
+
+    mpl.rcParams.update(mpl.rcParamsDefault)
+
+    sns.set_style('whitegrid')
+    plt.rcParams['font.family']='serif'
 
     internal = False 
     if ax is None: 
@@ -239,17 +246,24 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, ax=None):
 
     cm, acc = confusion_matrix(y_test=np.array(y_test), predictions=np.array(predictions))
 
-    sns.heatmap(cm, annot=True, center=0.0, linewidths=.5, ax=ax)
-    ax.set(xlabel='Actual', ylabel='Predicted')
+    if labels is None: 
+        sns.heatmap(cm, annot=True, linewidths=.5, ax=ax, center=0.0, cmap=bi_cm_r, cbar=cbar)
+    else: 
+        sns.heatmap(cm, annot=True, linewidths=.5, ax=ax, center=0.0, cmap=bi_cm_r, cbar=cbar, yticklabels=labels, xticklabels=labels)
+    ax.set(xlabel='True Class', ylabel='Predicted Class')#, xticks=[0,1], yticks=[0,1])
+    #ax.axis('off')
+    #ax.tick_params(top=False, bottom=False, left=False, right=False)
 
-    warnings.warn('replace cmap!')
+    ax.patch.set_edgecolor('black')  
+
+    ax.patch.set_linewidth('3')
 
     if internal: 
-        plt.tight_layout()
+        fig.tight_layout()
 
     return ax
 
-def plot_roc(fpr:np.array, tpr:np.array, auc:float, std_auc:float=None, std_tpr:float=None, ax=None):
+def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=None, std_auc:float=None):
     '''
     
     Notes
@@ -262,15 +276,13 @@ def plot_roc(fpr:np.array, tpr:np.array, auc:float, std_auc:float=None, std_tpr:
     if ax is None: 
         fig, ax = plt.subplots()
 
-
-    ax.plot([0, 1], [0, 1], linestyle="--", lw=2, color="r", label="Chance", alpha=0.8)
-
     if std_auc is not None: 
         roc_label = r"Mean ROC (AUC = %0.2f $\pm$ %0.2f)" % (auc, std_auc)
     else: 
         roc_label = 'ROC (AUC = %0.2f )' % auc
 
-    ax.plot(fpr,tpr,color="b", label=roc_label, lw=2, alpha=0.8)
+    ax.plot(fpr,tpr, label=roc_label, lw=1, alpha=1)
+    ax.plot([0, 1], [0, 1], linestyle="--", lw=1, color='black', label="Chance", alpha=1)
 
     if std_tpr is not None: 
         tprs_upper = np.minimum(tpr + std_tpr, 1)
@@ -280,17 +292,15 @@ def plot_roc(fpr:np.array, tpr:np.array, auc:float, std_auc:float=None, std_tpr:
             tprs_lower,
             tprs_upper,
             color="grey",
-            alpha=0.2,
-            label=r"$\pm$ 1 std. dev.",
-        )
+            alpha=0.2)
 
-    ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05])
-    ax.legend(loc="lower right", fontsize='xx-small')
+    ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05], xlabel='False Positive Rate', ylabel='True Positive Rate')
+    if auc is not None: 
+        ax.text(0.6, 0.2, f'AUC={round(auc,2)}', transform = ax.transAxes, size='large')
 
-    return ax 
+    #ax.legend(loc="lower right", fontsize='xx-small')
 
-    plt.clf()
-    plt.close() 
+    return ax  
     
 # External Utilities # 
 

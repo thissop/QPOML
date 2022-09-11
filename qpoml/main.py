@@ -401,7 +401,6 @@ class collection:
             #test_indices = np.array(test_indices).astype(int)
 
             for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
-                print('splitting')
                 X_train_fold = np.array(context_tensor[train_indices_fold])
                 X_test_fold = np.array(context_tensor[test_indices_fold])
                 y_train_fold = np.array(qpo_tensor[train_indices_fold])
@@ -935,8 +934,6 @@ class collection:
                     true = y_test[i]
                     pred = predictions[i]
 
-                    print(true, pred)
-
                     fpr, tpr, _ = roc_curve(true, pred)
                     if len(tpr)==np.sum(np.isfinite(tpr)):
                         auc_value = auc(fpr, tpr)
@@ -966,7 +963,7 @@ class collection:
         else: 
             raise Exception('')
 
-    def plot_confusion_matrix(self, fold:int=None, ax=None):
+    def plot_confusion_matrix(self, fold:int=None, ax=None, cbar:bool=False, labels:list=None):
         self.check_evaluated('plot_confusion_matrix')
 
         from qpoml.plotting import plot_confusion_matrix
@@ -984,13 +981,11 @@ class collection:
                 y_test = y_test[0]
                 predictions = predictions[0]
             
-            ax = plot_confusion_matrix(y_test, predictions, ax=ax)
+            ax = plot_confusion_matrix(y_test, predictions, ax=ax, cbar=cbar, labels=labels)
             return ax 
 
         else: 
             raise Exception('')
-
-        
 
     ## GOTCHAS ##
     
