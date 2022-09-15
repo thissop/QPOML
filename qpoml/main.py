@@ -7,7 +7,6 @@ import pandas as pd
 
 np.set_printoptions(suppress=True)
 
-
 class collection:
 
     qpo_reserved_words = ["observation_ID", "order"]
@@ -497,7 +496,7 @@ class collection:
 
     ## UTILITIES ##
 
-    def get_performance_statistics(self):
+    def get_performance_statistics(self, predicted_feature_name:str=None):
         r"""
         _Return model performance statistics_
 
@@ -509,12 +508,17 @@ class collection:
 
         statistics : `dict`
             Dictionary of performance statistics. Currently contains `mae` and `mse`
+
+        predicted_feature_name : str
+            If not None, this feature name will be used to undo the preproccessing on the vector. 
+
         """
 
         self.check_loaded_evaluated("performance_statistics")
 
         from sklearn.metrics import mean_absolute_error, mean_squared_error
         from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+        from qpoml.utilities import unprocess1d 
 
         classification_or_regression = self.classification_or_regression
 
@@ -550,10 +554,10 @@ class collection:
                 f1 = []
 
                 for true, prediction in zip(y_test, predictions):
-                    accuracy.append(accuracy_score(y_test, predictions))
-                    precision.append(precision_score(y_test, predictions))
-                    recall.append(recall_score(y_test, predictions))
-                    f1.append(f1_score(y_test, predictions))
+                    accuracy.append(accuracy_score(true, prediction))
+                    precision.append(precision_score(true, prediction))
+                    recall.append(recall_score(true, prediction))
+                    f1.append(f1_score(true, prediction))
 
                 statistics['accuracy'] = accuracy 
                 statistics['precision'] = precision
@@ -566,6 +570,12 @@ class collection:
                 mae = []
 
                 for true, prediction in zip(y_test, predictions):
+
+                    if predicted_feature_name is not None: 
+                        preprocess1d_tuple=self.qpo_preprocess1d_tuples[predicted_feature_name]
+                        true = unprocess1d(true, preprocess1d_tuple)
+                        prediction = unprocess1d(prediction, preprocess1d_tuple)
+
                     mse.append(mean_squared_error(true, prediction))
                     mae.append(mean_absolute_error(true, prediction))
 
@@ -831,7 +841,7 @@ class collection:
 
         plot_results_regression(regression_x=regression_x, regression_y=regression_y, y_test=None, predictions=None, feature_name=feature_name, unit=unit, which=None, ax=ax, upper_lim_factor=upper_lim_factor)
 
-    def plot_feature_importances(self, model, fold:int=None, kind:str='kernel-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
+    def plot_feature_importances(self, model, fold:int=None, kind:str='tree-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
         
         self.check_evaluated("plot_feature_importances")
         from qpoml.plotting import plot_feature_importances
@@ -873,9 +883,8 @@ class collection:
         import matplotlib.pyplot as plt
         import seaborn as sns
 
-        plt.style.use(
-            "https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle"
-        )
+        plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+        sns.set_context('paper')
 
         internal = False
         if ax is None:

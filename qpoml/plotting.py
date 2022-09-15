@@ -8,7 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LinearSegmentedColormap
 plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
-
+#plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish-2.mplstyle')
 #sns.set_style('ticks')
 #sns.set_context("notebook", font_scale=0.9, rc={"font.family": 'serif'})
 
@@ -149,14 +149,14 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
     r = linregress_result[2]
     stderr = str(round(linregress_result[4], 2))
 
-    ax.scatter(regression_x, regression_y)
+    ax.scatter(regression_x, regression_y, edgecolors='black', lw=0.5)
     r_sq = str(round(r**2, 2))
-    label = r'$r^2=$'+' '+r_sq+',\nm='+str(round(m, 2))+r'$\pm$'+stderr 
+    label = r'$r^2=$'+' '+r_sq+'\n'+r'$\frac{\Delta y}{\Delta x}=$'+str(round(m, 2))+r'$\pm$'+stderr 
     
     limits = [-0.1, upper_lim_factor*np.max(np.concatenate((regression_x, regression_y)))]
     
-    ax.plot(np.array(limits), m*np.array(limits)+b, label=label, color=seaborn_colors[7]) # math in equations! set that globally! 
-    ax.axline(xy1=(0,0), slope=1, color=seaborn_colors[7], ls='--')
+    ax.plot(np.array(limits), m*np.array(limits)+b, label=label, color='black')# color=seaborn_colors[7]) # math in equations! set that globally! 
+    ax.axline(xy1=(0,0), slope=1, ls='--', color='black')#color=seaborn_colors[7]
     
     label_suffix = feature_name.title() 
     if unit is not None: 
@@ -170,7 +170,7 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
         
     return ax 
 
-def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='kernel-shap', 
+def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='tree-shap', 
                              style:str='bar', ax=None, cut:float=2, sigma:float=2, 
                              mean_importances_df:pandas.DataFrame=None, importances_df:pandas.DataFrame=None):
     r'''
@@ -190,6 +190,12 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     '''
     
     from qpoml.utilities import feature_importances
+
+    mpl.rcParams.update(mpl.rcParamsDefault)
+    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+    sns.set_context('paper')
+
+    #sns.set_context('paper')
 
     if ax is None: 
         fig, ax = plt.subplots()
@@ -235,9 +241,8 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, auc:float
     from qpoml.utilities import confusion_matrix 
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-
-    sns.set_style('whitegrid')
-    plt.rcParams['font.family']='serif'
+    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+    sns.set_context('paper')
 
     internal = False 
     if ax is None: 
@@ -273,6 +278,10 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
 
     '''
 
+    mpl.rcParams.update(mpl.rcParamsDefault)
+    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+    sns.set_context('paper')
+
     if ax is None: 
         fig, ax = plt.subplots()
 
@@ -304,7 +313,7 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
     
 # External Utilities # 
 
-def plot_model_comparison(model_names:list, performance_lists:list, metric:str, style:str='box', ax=None, cut:float=2, sigma:float=2, ylabel:str='Median Absolute Error'):
+def plot_model_comparison(model_names:list, performance_lists:list, style:str='box', ax=None, cut:float=2, sigma:float=2):
     r'''
     Arguments
     ---------
@@ -323,6 +332,17 @@ def plot_model_comparison(model_names:list, performance_lists:list, metric:str, 
     
     '''
 
+    #mpl.rcParams.update(mpl.rcParamsDefault)
+    #sns.set_style('whitegrid')
+    #plt.rcParams['font.family']='serif'
+    #plt.rcParams['xtick.minor.visible'] = False
+    #ax.patch.set_edgecolor('black')  
+    #ax.patch.set_linewidth('1')
+
+    #plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish-2.mplstyle')
+
+    sns.set_context(font_scale=0.7)
+
     if ax is None: 
         fig, ax = plt.subplots()
 
@@ -332,6 +352,8 @@ def plot_model_comparison(model_names:list, performance_lists:list, metric:str, 
 
     if style == 'violin':
         sns.violinplot(data=df, ax=ax, cut=cut, color=seaborn_colors[0])
+        #ax.set_xticks([], which='minor')
+        ax.set_xticks(np.arange(0, len(list(df))), which='major')
     elif style == 'box':
         sns.boxplot(data=df, ax=ax, color=seaborn_colors[0]) # 
     elif style == 'errorbar':
@@ -347,7 +369,6 @@ def plot_model_comparison(model_names:list, performance_lists:list, metric:str, 
     else: 
         raise Exception('')
 
-    ax.set(ylabel=ylabel)
-    ax.set_xticklabels(labels=ax.get_xticklabels(), fontsize='small')
+    #ax.set_xticklabels(labels=ax.get_xticklabels(), fontsize='small')
 
     return ax

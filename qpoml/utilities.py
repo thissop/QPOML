@@ -85,7 +85,7 @@ def unprocess1d(modified, preprocess1d_tuple, range_low:float=0.1, range_high:fl
  
 ### "BORROWED" ###
 
-def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:int, n_test:int, approach:str, rope:list=[[-0.01, 0.01], 0.95]):
+def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:int, n_test:int, approach:str, better:str, rope:list=[[-0.01, 0.01], 0.95]):
     r'''
     Parameters
     ----------
@@ -100,13 +100,31 @@ def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:
     approach :
 
     rope : list
+
+    better : 
+        lower or higher
          
     
     '''
     from scipy.stats import t
     from qpoml.utilities import corrected_std, compute_corrected_ttest
 
-    differences = np.array(first_scores) - np.array(second_scores)
+    order = np.argsort([np.mean(first_scores), np.mean(second_scores)])
+    scores = np.array([first_scores, second_scores])
+    if better == 'lower':
+        scores = scores[order]
+        differences = scores[1]-scores[0]
+
+    elif better == 'higher':
+        order = order[::-1]
+        scores = scores[order]
+        differences = scores[1]-scores[0]
+
+    else: 
+        raise Exception('')
+
+
+    #differences = np.array(first_scores) - np.array(second_scores)
 
     dof = len(differences)-1
 
@@ -305,7 +323,7 @@ def results_regression(y_test:numpy.array, predictions:numpy.array, which:list, 
 
     return regression_x, regression_y, linregress_result 
     
-def feature_importances(model, X_test, y_test, feature_names, kind:str='kernel-shap'):
+def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-shap'):
     
     import shap
     import pandas as pd

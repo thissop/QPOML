@@ -9,49 +9,34 @@ import matplotlib.pyplot as plt
 qpo_path = '/mnt/c/Users/Research/Documents/GitHub/MAXI-J1535/final-push/data/pipeline/classification/MAXI_J1535-571_QPO-Input.csv'
 scalar_context_path = '/mnt/c/Users/Research/Documents/GitHub/MAXI-J1535/final-push/data/pipeline/classification/MAXI_J1535-571_Scalar-Input.csv'
 
-context_preprocess_dict = {'A':'as-is', 'B':'as-is', 'C':'as-is', 'D':'as-is', 'E':'as-is', 'F':'as-is', 'G':'as-is'}
+context_preprocess_dict = {'A':'normalize', 'B':'normalize', 'C':'normalize', 'D':'normalize', 'E':'normalize', 'F':'normalize', 'G':'normalize'}
 units = {'frequency':'Hz'}
 
-collec = collection()
-collec.load(qpo_csv=qpo_path, context_csv=scalar_context_path, context_preprocess=context_preprocess_dict, approach='classification', units=units)
-collec.evaluate(model=RandomForestClassifier(), evaluation_approach='k-fold', folds=10, stratify=True)
+collec_one = collection()
+collec_one.load(qpo_csv=qpo_path, context_csv=scalar_context_path, context_preprocess=context_preprocess_dict, approach='classification', units=units)
+collec_one.evaluate(model=RandomForestClassifier(), evaluation_approach='k-fold', folds=10, stratify=True)
 
-import seaborn as sns 
-import matplotlib.pyplot as plt 
-from matplotlib.colors import LinearSegmentedColormap
+rf_f1 = collec_one.get_performance_statistics()['f1']
 
-#plt.rcParams['font.family'] = 'serif'
-#plt.style.use('https://gist.githubusercontent.com/thissop/44b6f15f8f65533e3908c2d2cdf1c362/raw/fab353d758a3f7b8ed11891e27ae4492a3c1b559/science.mplstyle')
-#sns.set_context("paper") #font_scale=
-#sns.set_palette('deep')
-#seaborn_colors = sns.color_palette('deep')
+collec_two = collection()
+collec_two.load(qpo_csv=qpo_path, context_csv=scalar_context_path, context_preprocess=context_preprocess_dict, approach='classification', units=units)
+collec_two.evaluate(model=logistic(), evaluation_approach='k-fold', folds=10, stratify=True)
 
-#plt.rcParams['font.family'] = 'serif'
-#plt.rcParams["mathtext.fontset"] = "dejavuserif"
+log_f1 = collec_two.get_performance_statistics()['f1']
 
-#bi_cm = LinearSegmentedColormap.from_list("Custom", [seaborn_colors[0], (1,1,1), seaborn_colors[3]], N=20)
+from qpoml.plotting import plot_model_comparison
+plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish-2.mplstyle')
+fig, ax = plt.subplots()
 
-from qpoml.plotting import plot_roc  
-import os 
+ax = plot_model_comparison(['Random Forest', 'Logistic Regression'], [rf_f1, log_f1], style='violin', ax=ax)
+ax.set(ylabel='F1 Score')
 
-os.chdir('/mnt/c/Users/Research/Documents/GitHub/QPOML/development/testing/MAXI_J1535-571')
+fig.tight_layout()
 
-fig, ax = plt.subplots(figsize=(4,4))
+plt.savefig('/mnt/c/Users/Research/Documents/GitHub/QPOML/development/testing/MAXI_J1535-571/temp_class_model_comp.png', dpi=250)
 
-fpr, tpr, std_tpr, auc, std_auc = collec.roc_and_auc()
+fig, ax = plt.subplots()
 
-plot_roc(fpr, tpr, std_tpr, ax = ax, auc=std_auc)
+collec_one.plot_feature_importances(RandomForestClassifier(), fold=0, style='box', ax=ax)
 
-plt.savefig('temp_roc.png', dpi=150)
-
-plt.clf()
-plt.close()
-
-fig, ax = plt.subplots(figsize=(4,4))
-
-ax = collec.plot_confusion_matrix(ax=ax, labels=['QPO', 'No QPO'])
-
-plt.savefig('temp_matrix.png', dpi=150)
-
-plt.clf()
-plt.close()
+plt.savefig('/mnt/c/Users/Research/Documents/GitHub/QPOML/development/testing/MAXI_J1535-571/class_feature_imps.png', dpi=150)
