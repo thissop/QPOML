@@ -313,7 +313,7 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
     
 # External Utilities # 
 
-def plot_model_comparison(model_names:list, performance_lists:list, style:str='box', ax=None, cut:float=2, sigma:float=2):
+def plot_model_comparison(model_names:list, performance_lists:list, style:str='box', ax=None, ylabel='Median Absolute Error', cut:float=2, sigma:float=2):
     r'''
     Arguments
     ---------
@@ -341,7 +341,9 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
 
     #plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish-2.mplstyle')
 
-    sns.set_context(font_scale=0.7)
+    sort_idx = np.argsort([np.mean(i) for i in performance_lists])[::-1]
+
+    performance_lists, model_names = (np.array(performance_lists)[sort_idx], np.array(model_names)[sort_idx])
 
     if ax is None: 
         fig, ax = plt.subplots()
@@ -369,6 +371,8 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
     else: 
         raise Exception('')
 
-    #ax.set_xticklabels(labels=ax.get_xticklabels(), fontsize='small')
+    ax.set_xticklabels(labels=ax.get_xticklabels(), fontsize='x-small')
+    ax.set_ylabel(ylabel, fontsize='small')
+    fig.supxlabel('Model')
 
     return ax
