@@ -841,7 +841,7 @@ class collection:
 
         plot_results_regression(regression_x=regression_x, regression_y=regression_y, y_test=None, predictions=None, feature_name=feature_name, unit=unit, which=None, ax=ax, upper_lim_factor=upper_lim_factor)
 
-    def plot_feature_importances(self, model, fold:int=None, kind:str='tree-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2):
+    def plot_feature_importances(self, model, fold:int=None, kind:str='tree-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2, save_path:str=None):
         
         self.check_evaluated("plot_feature_importances")
         from qpoml.plotting import plot_feature_importances
@@ -859,6 +859,9 @@ class collection:
             plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, 
                                      kind=kind, style=style, ax=ax, cut=cut, sigma=sigma, 
                                      mean_importances_df=mean_importances_df, importances_df=importances_df)
+
+            if save_path is not None: 
+                importances_df.to_csv(save_path, index=False)
 
         else: 
             print('error!')

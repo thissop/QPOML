@@ -85,7 +85,70 @@ def unprocess1d(modified, preprocess1d_tuple, range_low:float=0.1, range_high:fl
  
 ### "BORROWED" ###
 
+def pairwise_compare_models(model_names:list, model_score_arrays:list, n_train:int, n_test:int, save_dir:str, rope:list=[[-0.01, 0.01], 0.95]):
+    
+    r'''
+    
+    only works on regression right now!
+    
+    '''
+
+    if save_dir[-1]!='/':
+        save_dir += '/'
+
+    sorted_first_names = []
+    sorted_second_names = [] 
+    t_values = []
+    p_values = []
+    first_better_percents = []
+    second_better_percents = []
+
+    idx = np.argsort(np.mean(model_score_arrays, axis=1))
+    model_names = np.array(model_names)[idx]
+    model_score_arrays = np.array(model_score_arrays)[idx]
+
+    model_n = len(model_names)
+
+    for i, first_name in enumerate(model_names):   
+        first_score_arr = model_score_arrays[i]   
+        first_average = np.mean(first_score_arr)
+        for j in range(i+1, model_n):   
+            second_score_arr = model_score_arrays[j]  
+            second_name = model_names[j]
+            second_average = np.mean(second_score_arr)
+
+            sorted_first_names.append(first_name)
+            sorted_second_names.append(second_name)
+            print(first_name, first_average, second_name, second_average)
+            if first_average > second_average: 
+                t_values.append(['-'])
+                p_values.append(['-'])
+
+            else: 
+                t, p = compare_models(first_score_arr, second_score_arr, n_train=n_train, n_test=n_test, approach='frequentist', better='lower')
+                t_values.append(round(t, 2))
+                p_values.append(p)
+
+            first_better, second_better, _, _ = compare_models(first_score_arr, second_score_arr, n_train=n_train, n_test=n_test, approach='bayesian', better='lower')
+
+            first_better = round(100*first_better, 2)
+            second_better = 100-first_better
+
+            first_better_percents.append(first_better)
+            second_better_percents.append(second_better)
+    
+    temp_columns = [sorted_first_names, sorted_second_names, t_values, p_values, first_better_percents, second_better_percents]
+    temp_names = ['First Model Name', 'Second Model Name', 't', 'p', '% Chance First Better', '% Chance Second Better']
+    
+    pairwise_results_df = pd.DataFrame()
+    for i in range(len(temp_columns)): 
+        pairwise_results_df[temp_names[i]] = temp_columns[i]
+        
+    pairwise_results_df.to_csv(f'{save_dir}comparison_table.csv', index=False)
+    pairwise_results_df.to_latex(f'{save_dir}comparison_table.tex', index=False)#, float_format="%.6f")
+
 def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:int, n_test:int, approach:str, better:str, rope:list=[[-0.01, 0.01], 0.95]):
+    
     r'''
     Parameters
     ----------
@@ -104,13 +167,20 @@ def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:
     better : 
         lower or higher
          
+    NOTES
+    -----
+
+    FOR NOW THIS ONLY WORKS WITH comparison metric = mae (thus, regression). This sets better=higher for bayesian
     
+    Do not even use this function alone ... only use with the pairwise_compare_models() wrapper 
+
     '''
     from scipy.stats import t
     from qpoml.utilities import corrected_std, compute_corrected_ttest
 
     order = np.argsort([np.mean(first_scores), np.mean(second_scores)])
     scores = np.array([first_scores, second_scores])
+    
     if better == 'lower':
         scores = scores[order]
         differences = scores[1]-scores[0]
