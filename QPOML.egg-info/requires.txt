@@ -2,4 +2,8 @@ numpy
 pandas
 matplotlib
 astropy
-sklearn
+scikit-learn
+seaborn
+statsmodels
+scipy
+shap

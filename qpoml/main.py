@@ -886,7 +886,7 @@ class collection:
         import matplotlib.pyplot as plt
         import seaborn as sns
 
-        plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+        plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
         sns.set_context('paper')
 
         internal = False

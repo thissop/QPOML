@@ -1,3 +1,4 @@
+from shutil import ExecError
 from tkinter import N
 import numpy as np
 import numpy 
@@ -425,9 +426,13 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-sha
     elif kind=='kernel-shap' or kind=='tree-shap': 
         
         if kind=='kernel-shap':
-            explainer = shap.Explainer(model,X_test, check_additivity=False)
+            explainer = shap.Explainer(model, X_test, check_additivity=False)
         else: 
-            explainer = shap.TreeExplainer(model, data=X_test, check_additivity=False)
+            try: 
+                explainer = shap.TreeExplainer(model, data=X_test, check_additivity=False)
+
+            except Exception as e: 
+                explainer = shap.Explainer(model,X_test, check_additivity=False)
 
         shap_values = explainer(X_test).values.T
 

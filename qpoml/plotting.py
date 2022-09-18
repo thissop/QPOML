@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib as mpl 
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LinearSegmentedColormap
-plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
 #plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish-2.mplstyle')
 #sns.set_style('ticks')
 #sns.set_context("notebook", font_scale=0.9, rc={"font.family": 'serif'})
@@ -192,7 +192,7 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     from qpoml.utilities import feature_importances
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
     sns.set_context('paper')
 
     #sns.set_context('paper')
@@ -241,7 +241,7 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, auc:float
     from qpoml.utilities import confusion_matrix 
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
     sns.set_context('paper')
 
     internal = False 
@@ -279,7 +279,7 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
     '''
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
     sns.set_context('paper')
 
     if ax is None: 
@@ -313,7 +313,7 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
     
 # External Utilities # 
 
-def plot_model_comparison(model_names:list, performance_lists:list, style:str='box', ax=None, ylabel='Median Absolute Error', cut:float=2, sigma:float=2):
+def plot_model_comparison(model_names:list, performance_lists:list, style:str='box', ax=None, fig=None, ylabel='Median Absolute Error', cut:float=2, sigma:float=2):
     r'''
     Arguments
     ---------
@@ -347,6 +347,9 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
 
     if ax is None: 
         fig, ax = plt.subplots()
+    
+    if fig is not None: 
+        fig.supxlabel('Model', fontsize='small')
 
     df = pd.DataFrame()
     for i in range(len(performance_lists)):
@@ -373,6 +376,9 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
 
     ax.set_xticklabels(labels=ax.get_xticklabels(), fontsize='x-small')
     ax.set_ylabel(ylabel, fontsize='small')
-    fig.supxlabel('Model')
+    
+
+    
+    
 
     return ax
