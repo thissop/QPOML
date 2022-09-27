@@ -1,3 +1,4 @@
+import os
 import numpy
 import pandas 
 import warnings
@@ -7,7 +8,16 @@ import seaborn as sns
 import matplotlib as mpl 
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LinearSegmentedColormap
-plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+
+wh1 = False
+if os.path.exists('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle'):
+    wh1 = True 
+
+if wh1: 
+    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+else: 
+    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+
 #plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish-2.mplstyle')
 #sns.set_style('ticks')
 #sns.set_context("notebook", font_scale=0.9, rc={"font.family": 'serif'})
@@ -192,7 +202,10 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     from qpoml.utilities import feature_importances
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+    if wh1: 
+        plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+    else: 
+        plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
     sns.set_context('paper')
 
     #sns.set_context('paper')
@@ -241,7 +254,10 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, auc:float
     from qpoml.utilities import confusion_matrix 
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+    if wh1: 
+        plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+    else: 
+        plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
     sns.set_context('paper')
 
     internal = False 
@@ -279,7 +295,10 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
     '''
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+    if wh1: 
+        plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+    else: 
+        plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
     sns.set_context('paper')
 
     if ax is None: 

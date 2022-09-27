@@ -1,4 +1,4 @@
-from tkinter import N
+import os 
 import numpy
 import pandas
 import warnings
@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 
 np.set_printoptions(suppress=True)
+
+wh1 = False
+if os.path.exists('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle'):
+    wh1 = True 
 
 class collection:
 
@@ -885,8 +889,13 @@ class collection:
         self.check_evaluated("plot_fold_performance")
         import matplotlib.pyplot as plt
         import seaborn as sns
+        
 
-        plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+        if wh1: 
+            plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
+        else: 
+            plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+            
         sns.set_context('paper')
 
         internal = False
