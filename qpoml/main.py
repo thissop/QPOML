@@ -76,10 +76,7 @@ class collection:
         context_preprocess,
         approach:str,
         qpo_preprocess=None,
-        context_type: str='scalar',
-        spectrum_approach: str = "by-row",
-        units:dict=None, 
-        rebin: int = None) -> None:
+        units:dict=None) -> None:
 
         r"""
         _Class method for loading collection object_
@@ -93,9 +90,6 @@ class collection:
         context_csv : `str`
             File path to correctly formatted csv file with context information
 
-        context_type : `str`
-            If it is set to "spectrum" preprocessing will handle context input as spectrum
-
         context_preprocess : `dict` or `str`
             Fix this
 
@@ -104,10 +98,6 @@ class collection:
 
         qpo_preprocess : `dict` or `str`
             Fix this. If none but approach is regression, then all features will be "locally" min-max normalized. 
-
-        rebin : `int`
-            Defaults to `None`. If set to integer, spectrum will be rebinned such that it contains `rebin` channels.
-
 
         Returns
         -------
@@ -132,86 +122,12 @@ class collection:
         context_features = list(temp_df)
         context_tensor = np.array(temp_df)
 
-        if context_type == "spectrum":
-            self.context_is_spectrum = True
+        transposed = np.transpose(context_tensor)
+        for index, arr in enumerate(transposed):
+            arr, (_, _, _) = preprocess1d(arr, context_preprocess[context_features[index]])
+            transposed[index] = arr
 
-            context_tensor = context_tensor.astype(float)
-
-            spectral_ranges = []
-            spectral_centers = []
-
-            for col in context_features:
-                col_list = col.split("_")
-                spectral_centers.append(float(col_list[0]))
-                col_list = col_list[1].split("-")
-                spectral_ranges.append((col_list[0], col_list[1]))
-
-            spectral_centers = np.array(spectral_centers).astype(float)
-
-            if rebin is not None:
-
-                from scipy.stats import binned_statistic
-
-                lows = np.array([i[0] for i in spectral_ranges]).astype(float)
-                highs = np.array([i[1] for i in spectral_ranges]).astype(float)
-
-                rebinned_lows, _, _ = binned_statistic(
-                    spectral_centers, lows, "min", bins=rebin
-                )
-                rebinned_highs, _, _ = binned_statistic(
-                    spectral_centers, highs, "max", bins=rebin
-                )
-
-                spectral_ranges = [
-                    [i, j] for i, j in zip(rebinned_lows, rebinned_highs)
-                ]
-                context_tensor = np.array(
-                    [
-                        binned_statistic(spectral_centers, i, "sum", bins=rebin)[0]
-                        for i in context_tensor
-                    ]
-                )
-                spectral_centers, _, _ = binned_statistic(
-                    spectral_centers, spectral_centers, "mean", bins=rebin
-                )
-
-                temp_one = [str(i) + "_" for i in spectral_centers]
-
-                # lol this is an insane list comprehension
-                context_features = [
-                    temp_one[index]
-                    + str(spectral_ranges[index][0])
-                    + "-"
-                    + str(spectral_ranges[index][1])
-                    for index in range(len(spectral_centers))
-                ]
-
-            ### NORMALIZE CONTEXT SPECTRUM ###
-            temp_tensor = None
-            if spectrum_approach == "by-row" or spectrum_approach == "as-is":
-                temp_tensor = context_tensor
-            elif spectrum_approach == "by-column":
-                temp_tensor = np.transpose(context_tensor)
-            else:
-                raise Exception("")
-            for index, arr in enumerate(temp_tensor):
-                arr, (_, _, _) = preprocess1d(arr, context_preprocess)
-                temp_tensor[index] = arr
-            if spectrum_approach == "by-column":
-                context_tensor = np.transpose(temp_tensor)
-            else:
-                context_tensor = temp_tensor
-
-            self.spectral_ranges = spectral_ranges
-            self.spectral_centers = spectral_centers
-
-        else:
-            transposed = np.transpose(context_tensor)
-            for index, arr in enumerate(transposed):
-                arr, (_, _, _) = preprocess1d(arr, context_preprocess[context_features[index]])
-                transposed[index] = arr
-
-            context_tensor = np.transpose(transposed)
+        context_tensor = np.transpose(transposed)
 
         ### QPO ###
 

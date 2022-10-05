@@ -481,20 +481,20 @@ def roc_and_auc(y_test:numpy.array, predictions:numpy.array):
 
 ### MULTI-MODEL RELATED ###
 
-def bulk_load(n:int, qpo_csv:str, context_csv:str, qpo_preprocess:str, context_preprocess, context_type:str='scalar', spectrum_approach:str='by-row', rebin:int=None):
+def bulk_load(n:int, qpo_csv:str, context_csv:str, qpo_preprocess:str, context_preprocess):
     r'''
     initialize multiple identical qpoml collection objects
     '''
 
-    from qpoml import collection 
+   #from qpoml import collection 
+    from qpoml.new_main import collection 
 
     loaded_collections = []
 
     for i in range(n): 
         c = None 
         c = collection()
-        c.load(qpo_csv=qpo_csv, context_csv=context_csv, context_type=context_type, context_preprocess=context_preprocess,
-               qpo_preprocess=qpo_preprocess, spectrum_approach=spectrum_approach, rebin=rebin)
+        c.load(qpo_csv=qpo_csv, context_csv=context_csv, context_preprocess=context_preprocess, qpo_preprocess=qpo_preprocess)
 
         loaded_collections.append(c)
     
