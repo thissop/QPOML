@@ -143,6 +143,8 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
    
     from qpoml.utilities import results_regression 
     
+    sns.set_context(font_scale=1.15)
+
     if regression_x is None and regression_y is None: 
         regression_x, regression_y, linregress_result = results_regression(y_test=y_test, predictions=predictions, which=which)
     
@@ -258,7 +260,7 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, auc:float
         plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
     else: 
         plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
-    sns.set_context('paper')
+    sns.set_context('paper', font_scale=1.4)
 
     internal = False 
     if ax is None: 
@@ -268,9 +270,9 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, auc:float
     cm, acc = confusion_matrix(y_test=np.array(y_test), predictions=np.array(predictions))
 
     if labels is None: 
-        sns.heatmap(cm, annot=True, linewidths=.5, ax=ax, center=0.0, cmap=bi_cm_r, cbar=cbar)
+        sns.heatmap(cm, annot=True, linewidths=.5, ax=ax, center=0.0, cmap=bi_cm_r, cbar=cbar, annot_kws={'fontsize':'xx-large'})
     else: 
-        sns.heatmap(cm, annot=True, linewidths=.5, ax=ax, center=0.0, cmap=bi_cm_r, cbar=cbar, yticklabels=labels, xticklabels=labels)
+        sns.heatmap(cm, annot=True, linewidths=.5, ax=ax, center=0.0, cmap=bi_cm_r, cbar=cbar, yticklabels=labels, xticklabels=labels, annot_kws={'fontsize':'xx-large'})
     ax.set(xlabel='True Class', ylabel='Predicted Class')#, xticks=[0,1], yticks=[0,1])
     #ax.axis('off')
     #ax.tick_params(top=False, bottom=False, left=False, right=False)
