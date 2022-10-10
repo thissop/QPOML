@@ -139,11 +139,11 @@ def plot_gridsearch(scores, ax=None):
 ### POST EVALUATION ### 
 
 def plot_results_regression(y_test, predictions, feature_name:str, which:list, ax=None, upper_lim_factor:float=1.025, 
-                            regression_x:numpy.array=None, regression_y:numpy.array=None, unit:str=None):
+                            regression_x:numpy.array=None, regression_y:numpy.array=None, unit:str=None, font_scale:float=1.15):
    
     from qpoml.utilities import results_regression 
     
-    sns.set_context(font_scale=1.15)
+    sns.set_context(font_scale=font_scale)
 
     if regression_x is None and regression_y is None: 
         regression_x, regression_y, linregress_result = results_regression(y_test=y_test, predictions=predictions, which=which)
@@ -228,7 +228,7 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
         if style == 'violin':
             sns.violinplot(data=importances_df, ax=ax, cut=cut, color=seaborn_colors[0])
         elif style == 'box':
-            sns.boxplot(data=importances_df, ax=ax, color=seaborn_colors[0]) # 
+            sns.boxplot(data=importances_df, ax=ax, color=seaborn_colors[0], whis=2.) # 
         elif style == 'errorbar':
             thickness = plt.rcParams['axes.linewidth']
 
@@ -243,7 +243,7 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
             raise Exception('')
 
     else: 
-        ax.boxplot(importances_df)
+        ax.boxplot(importances_df, whis=2.0)
         ax.set_xticklabels(list(importances_df)) 
 
     ax.set(xlabel='Feature', ylabel='Feature Importance')
@@ -367,7 +367,7 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
 
     performance_lists, model_names = (np.array(performance_lists)[sort_idx], np.array(model_names)[sort_idx])
 
-    sns.set_context(fontscale=1.3)
+    sns.set_context(font_scale=1.3)
 
     if ax is None: 
         fig, ax = plt.subplots()
@@ -384,7 +384,7 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
         #ax.set_xticks([], which='minor')
         ax.set_xticks(np.arange(0, len(list(df))), which='major')
     elif style == 'box':
-        sns.boxplot(data=df, ax=ax, color=seaborn_colors[0]) # 
+        sns.boxplot(data=df, ax=ax, color=seaborn_colors[0], whis=2.0) # 
     elif style == 'errorbar':
         thickness = plt.rcParams['axes.linewidth']
 
