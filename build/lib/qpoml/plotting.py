@@ -183,8 +183,8 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
     return ax 
 
 def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='tree-shap', 
-                             style:str='bar', ax=None, cut:float=2, sigma:float=2, 
-                             mean_importances_df:pandas.DataFrame=None, importances_df:pandas.DataFrame=None):
+                             style:str='bar', ax=None, cut:float=2, sigma:float=2.576, 
+                             mean_importances_df:pandas.DataFrame=None, importances_df:pandas.DataFrame=None, confidence_level:float=0.99, median_hline:bool=False):
     r'''
     
     Arguments
@@ -202,6 +202,7 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     '''
     
     from qpoml.utilities import feature_importances
+    import scipy 
 
     mpl.rcParams.update(mpl.rcParamsDefault)
     if wh1: 
@@ -222,7 +223,23 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
         raise Exception('')
 
     if kind=='default' or style=='bar': 
-        sns.barplot(data=mean_importances_df, ax=ax, color=seaborn_colors[0])
+        yerr = np.array([2.576*np.std(importances_df[i])/np.sqrt(len(importances_df[i])) for i in list(importances_df)]) # 99% CI 
+        sns.barplot(data=mean_importances_df, ax=ax, color=seaborn_colors[0], edgecolor='black', linewidth=0.7, yerr=yerr)
+
+        if median_hline is not None and median_hline: 
+            ax.axhline(y=np.median(mean_importances_df), ls='--', color='black')
+
+        '''
+        
+        standard error notes
+        
+        - standard error shows the accuracy of the mean...estimates standard deviation the mean's sampling distribution (SEM = standard error of the mean)
+        
+
+        - error bars based on the s.e.m. reflect the uncertainty in the mean and its dependency on the sample size
+
+        - CI: This is an interval estimate that indicates the reliability of a measurement
+        '''
 
     elif importances_df is not None: 
         if style == 'violin':
