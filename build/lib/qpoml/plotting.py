@@ -184,7 +184,7 @@ def plot_results_regression(y_test, predictions, feature_name:str, which:list, a
 
 def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str='tree-shap', 
                              style:str='bar', ax=None, cut:float=2, sigma:float=2.576, 
-                             mean_importances_df:pandas.DataFrame=None, importances_df:pandas.DataFrame=None, confidence_level:float=0.99, median_hline:bool=False):
+                             mean_importances_df:pandas.DataFrame=None, importances_df:pandas.DataFrame=None, confidence_level:float=0.99, hline:bool=False):
     r'''
     
     Arguments
@@ -198,6 +198,9 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     
     sigma : float 
         only applicable if style is 'errorbar' ... sigma used in calculating errorbars 
+
+    hline : bool 
+        if it's true, median feature importance will be plotted as dashed line, and mean feature importance as dotted line
     
     '''
     
@@ -226,8 +229,9 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
         yerr = np.array([2.576*np.std(importances_df[i])/np.sqrt(len(importances_df[i])) for i in list(importances_df)]) # 99% CI 
         sns.barplot(data=mean_importances_df, ax=ax, color=seaborn_colors[0], edgecolor='black', linewidth=0.7, yerr=yerr)
 
-        if median_hline is not None and median_hline: 
+        if hline is not None and hline: 
             ax.axhline(y=np.median(mean_importances_df), ls='--', color='black')
+            ax.axhline(y=np.mean(mean_importances_df, axis=1)[0], ls=':', color='black')
 
         '''
         
@@ -352,6 +356,53 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
     
 # External Utilities # 
 
+def bias_report(predictions, y_test, feature_names:list, ax:None, fold:int=0):
+    r'''
+    
+    Arguments
+    ---------
+
+    predictions 
+        - list of shape (m, n) where (m) is number of 'rows' or instances/observations, and (n) is number of features. Can be for multiple folds, zeroth will be selected for study by default
+
+    y_test 
+        - same, but for true values
+
+     
+    '''
+
+    from scipy import stats 
+
+    feature_names = feature_names*int(len(predictions)/len(feature_names))
+
+    predictions, y_test = (np.transpose(i) for i in [predictions[fold], y_test[fold]])
+
+    diffs = [i-j for i, j in zip(predictions, y_test)]
+
+    sns.set_context("paper", font_scale=0.8) 
+
+    df = pd.DataFrame()
+
+    for i in range(len(diffs)): 
+        df[feature_names[i]] = diffs[i]
+    
+    if ax is None: 
+        fig, ax = plt.subplots()
+    
+    sns.boxplot(data=df, color=seaborn_colors[0])
+    ax.set(xlabel='QPO Parameter', ylabel='Normalized Residual')
+
+    ks_ps = {} 
+
+    for i in range(len(diffs)):
+        for j in range(i, len(diffs)-1):
+            p = stats.kstest(diffs[i], diffs[j], alternative='two-sided')[1]
+            ks_ps.update({f'{feature_names[i]}-{feature_names[j]}':[p]})
+
+    ks_df = pd.DataFrame(ks_ps)
+
+    return ks_df 
+
 def plot_model_comparison(model_names:list, performance_lists:list, style:str='box', ax=None, fig=None, ylabel='Median Absolute Error', cut:float=2, sigma:float=2):
     r'''
     Arguments
@@ -366,6 +417,8 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
     cut : float
         only applicable if style is 'violin' ... from seaborn docs: 'Distance, in units of bandwidth size, to extend the density past the extreme datapoints. Set to 0 to limit the violin range within the range of the observed data (i.e., to have the same effect as trim=True in ggplot.'
     
+        **NOTE** this could be fixed by incorporating clip too 
+
     sigma : float 
         only applicable if style is 'errorbar' ... sigma used in calculating errorbars 
     
