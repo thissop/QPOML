@@ -120,7 +120,6 @@ def pairwise_compare_models(model_names:list, model_score_arrays:list, n_train:i
 
             sorted_first_names.append(first_name)
             sorted_second_names.append(second_name)
-            print(first_name, first_average, second_name, second_average)
             if first_average > second_average: 
                 t_values.append(['-'])
                 p_values.append(['-'])

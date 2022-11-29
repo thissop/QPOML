@@ -224,7 +224,7 @@ class collection:
         folds: int = None,
         repetitions: int = None, 
         hyperparameter_dictionary:dict=None,
-        stratify:bool=True) -> None:
+        stratify=None) -> None:
         r"""
         _Evaluate an already initiated and loaded model_
 
@@ -243,18 +243,22 @@ class collection:
         folds : `int`
             Default is `None`; if set to some integer, the model will be validated via K-Fold validation, with `K=folds`
 
-        stratify : bool 
-            if True (default) stratifies splitting on class output vector 
+        stratify : bool or dict
+            if True (default) stratifies splitting on class output vector. If it is a dictionary, then the dictionary needs to have keys as observations and the corresponding items as the values upon which they will be fed and stratified on. can only be boolean if clasification. otherwise, needs to be dictionary. dictionary works for reg or class tho. needs to have 'observation_ID':[] and 'class':[] for stratification
 
         Returns
         -------
 
-        Notes / To-Do 
+        To-Do 
         -----
 
-        - Need to implement stratify for reg!
-
         - fix classification_or_regression to easier format (e.g. boolean) 
+
+        Notes 
+        -----
+
+        - I know I already said this elsewhere, but stratify can only be bool for type(load approach) == bool. Otherwise, especially for regression, it needs to be a dictionary of form {'observation_ID':[], 'class':[]}
+        - Default does not stratify! only k-fold or repeat k-fold! 
 
         """
 
@@ -287,12 +291,20 @@ class collection:
         if evaluation_approach == "k-fold" and folds is not None:
 
             if repetitions is None:
-                if classification_or_regression == 'classification' and stratify: 
+                if stratify is not None: 
+                    if type(stratify) is bool and classification_or_regression=='classification': 
+                        kf = StratifiedKFold(n_splits=folds) 
+                        split = list(kf.split(X=context_tensor, y=qpo_tensor))  
 
-                    # CONFIRMED IT GOES HERE! #
+                    elif type(stratify) is dict: 
+                        stratify_df = pd.DataFrame()
+                        stratify_df['observation_ID'] = observation_IDs
+                        stratify_df = stratify_df.merge(pd.DataFrame.from_dict(stratify), on='observation_ID') 
+                        kf = StratifiedKFold(n_splits=folds) 
+                        split = list(kf.split(X=context_tensor, y=stratify_df['class'])) 
 
-                    kf = StratifiedKFold(n_splits=folds) 
-                    split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
+                    else: 
+                        raise Exception('') 
 
                 else: 
                     kf = KFold(n_splits=folds)
@@ -301,11 +313,22 @@ class collection:
             else:
                 from sklearn.model_selection import RepeatedKFold
 
-                if classification_or_regression == 'classification' and stratify: 
+                if stratify is not None: 
+                    if type(stratify) is bool and classification_or_regression=='classification': 
+                        kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
+                        split = list(kf.split(X=context_tensor, y=qpo_tensor))  
 
 
-                    kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
-                    split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
+                    elif type(stratify) is dict: 
+                        stratify_df = pd.DataFrame()
+                        stratify_df['observation_ID'] = observation_IDs
+                        stratify_df = stratify_df.merge(pd.DataFrame.from_dict(stratify), on='observation_ID') 
+
+                        kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
+                        split = list(kf.split(X=context_tensor, y=stratify_df['class'])) 
+
+                    else:
+                        raise Exception('')
 
                 else: 
 
@@ -739,7 +762,7 @@ class collection:
 
     ### POST EVALUATION ###
 
-    def plot_results_regression(self, feature_name:str, which:list, ax = None, upper_lim_factor:float=1.025, fold:int = None):
+    def plot_results_regression(self, feature_name:str, which:list, ax = None, upper_lim_factor:float=1.025, fold:int = None, font_scale:float=1.15):
         
         self.check_evaluated("plot_results_regression")
         from qpoml.plotting import plot_results_regression
@@ -759,9 +782,9 @@ class collection:
         
         unit = self.units[feature_name]
 
-        plot_results_regression(regression_x=regression_x, regression_y=regression_y, y_test=None, predictions=None, feature_name=feature_name, unit=unit, which=None, ax=ax, upper_lim_factor=upper_lim_factor)
+        plot_results_regression(regression_x=regression_x, regression_y=regression_y, y_test=None, predictions=None, feature_name=feature_name, unit=unit, which=None, ax=ax, upper_lim_factor=upper_lim_factor, font_scale=font_scale)
 
-    def plot_feature_importances(self, model, fold:int=None, kind:str='tree-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2, save_path:str=None):
+    def plot_feature_importances(self, model, fold:int=None, kind:str='tree-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2.576, hline:bool=False, save_path:str=None):
         
         self.check_evaluated("plot_feature_importances")
         from qpoml.plotting import plot_feature_importances
@@ -778,7 +801,7 @@ class collection:
 
             plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, 
                                      kind=kind, style=style, ax=ax, cut=cut, sigma=sigma, 
-                                     mean_importances_df=mean_importances_df, importances_df=importances_df)
+                                     mean_importances_df=mean_importances_df, importances_df=importances_df, hline=hline)
 
             if save_path is not None: 
                 importances_df.to_csv(save_path, index=False)
@@ -840,7 +863,7 @@ class collection:
 
     #### CLASSIFICATION ####
 
-    def roc_and_auc(self): 
+    def roc_and_auc(self, fold:int=None): 
         r'''
         
         Notes
@@ -852,7 +875,6 @@ class collection:
 
         from qpoml.utilities import roc_and_auc
         from sklearn.metrics import roc_curve, auc
-
         self.check_evaluated('roc_and_auc')
 
         if self.classification_or_regression=='classification': 
@@ -862,7 +884,7 @@ class collection:
             std_tpr = None
             std_auc = None
 
-            if len(predictions)>2: 
+            if len(predictions)>2 and fold is None: 
                 mean_fpr = np.linspace(0, 1, 100)
                 tprs = []
                 aucs = []
@@ -893,7 +915,7 @@ class collection:
                 auc = mean_auc
 
             else: 
-                fpr, tpr, auc = roc_and_auc(y_test[0], predictions[0])
+                fpr, tpr, auc = roc_and_auc(y_test[fold], predictions[fold])
 
             return fpr, tpr, std_tpr, auc, std_auc
 
@@ -912,7 +934,7 @@ class collection:
 
             if fold is not None: 
                 y_test = y_test[fold]
-                predictions = predictions[0]
+                predictions = predictions[fold]
             
             else: 
                 y_test = y_test[0]
