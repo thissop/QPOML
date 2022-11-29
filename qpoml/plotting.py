@@ -44,6 +44,7 @@ def plot_correlation_matrix(data:pandas.DataFrame, ax=None, matrix_style:str='de
     corr, cols = correlation_matrix(data=data)
 
     internal = False 
+    
 
     if ax is None: 
         fig, ax = plt.subplots()
