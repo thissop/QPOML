@@ -80,28 +80,20 @@ class collection:
 
         r"""
         _Class method for loading collection object_
-
         Parameters
         ----------
-
         qpo_csv : `str`
             File path to correctly formatted csv file with QPO information
-
         context_csv : `str`
             File path to correctly formatted csv file with context information
-
         context_preprocess : `dict` or `str`
             Fix this
-
         approach : str
             Either "regression" or "classification" 
-
         qpo_preprocess : `dict` or `str`
             Fix this. If none but approach is regression, then all features will be "locally" min-max normalized. 
-
         Returns
         -------
-
         """
 
         self.dont_do_twice("load")
@@ -227,39 +219,27 @@ class collection:
         stratify=None) -> None:
         r"""
         _Evaluate an already initiated and loaded model_
-
         Parameters
         ----------
-
         model : `object`
             An initialized regressor object from another class, e.g. sklearn. It will be cloned and then have parameters reset, so it's okay (it's actually nesessary) that it is initalized
-
         evaluation_approach : `str`
             Can be `default` or `k-fold` ... Fix this!
-
         test_proportion : `float`
             Default is `0.1`; proportion of values to reserve for test set
-
         folds : `int`
             Default is `None`; if set to some integer, the model will be validated via K-Fold validation, with `K=folds`
-
         stratify : bool or dict
             if True (default) stratifies splitting on class output vector. If it is a dictionary, then the dictionary needs to have keys as observations and the corresponding items as the values upon which they will be fed and stratified on. can only be boolean if clasification. otherwise, needs to be dictionary. dictionary works for reg or class tho. needs to have 'observation_ID':[] and 'class':[] for stratification
-
         Returns
         -------
-
         To-Do 
         -----
-
         - fix classification_or_regression to easier format (e.g. boolean) 
-
         Notes 
         -----
-
         - I know I already said this elsewhere, but stratify can only be bool for type(load approach) == bool. Otherwise, especially for regression, it needs to be a dictionary of form {'observation_ID':[], 'class':[]}
         - Default does not stratify! only k-fold or repeat k-fold! 
-
         """
 
         self.check_loaded("evaluate")
@@ -442,19 +422,14 @@ class collection:
     def get_performance_statistics(self, predicted_feature_name:str=None):
         r"""
         _Return model performance statistics_
-
         Parameters
         ----------
-
         Returns
         -------
-
         statistics : `dict`
             Dictionary of performance statistics. Currently contains `mae` and `mse`
-
         predicted_feature_name : str
             If not None, this feature name will be used to undo the preproccessing on the vector. 
-
         """
 
         self.check_loaded_evaluated("performance_statistics")
@@ -530,24 +505,16 @@ class collection:
     def gridsearch(self, model, parameters: dict, n_jobs: int = None):
         r"""
         _Run five fold exhaustive grid search for hyperparameter tuning_
-
         Parameters
         ----------
-
         model :
-
         parameters :
-
         n_jobs :
-
         Returns
         -------
-
         Notes / To-Do 
         -------------
-
         - need to fix scoring so users can set  
-
         """
 
         self.check_loaded("grid_search")
@@ -596,13 +563,10 @@ class collection:
     def correlation_matrix(self):
         r"""
         _Class wrapper to `utils.correlation_matrix`_
-
         Parameters
         ----------
-
         Returns
         -------
-
         fix after adding to utils correlation matrix docs!
         """
 
@@ -652,10 +616,8 @@ class collection:
         
         Arguments
         ---------
-
         feature_name : str
             Since preprocessing is handled under the hood within the collection class, users won't have access to their preprocess1d tuples. Thus, they need to also give the name of the feature (e.g. 'frequency') so this method can locate a saved copy of the preprocess1d tuple that matches with an output QPO feature that was registered when the collection object was loaded.
-
         '''
 
 
@@ -814,13 +776,10 @@ class collection:
     def plot_fold_performance(self, statistic: str = "mae", ax=None):
         r"""
         _Class method for visualizing predictive performance across different folds of test data_
-
         Parameters
         ----------
-
         statistic : `str`
             Either 'mse' for mean squared error, or 'mae' for median absolute error
-
         Returns
         -------
         """
@@ -868,9 +827,7 @@ class collection:
         
         Notes
         -----
-
         - Portions of this routine were taken from an sklearn documentation example that can be found at this [link](https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html?highlight=roc+curve)
-
         '''
 
         from qpoml.utilities import roc_and_auc

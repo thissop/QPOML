@@ -8,12 +8,10 @@ import pandas as pd
 np.set_printoptions(suppress=True)
 
 wh1 = False
-if os.path.exists('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle'):
+if os.path.exists('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle'): # fix
     wh1 = True 
 
 class collection:
-
-    qpo_reserved_words = ["observation_ID", "order"]
 
     # REQUIRED #
 
@@ -30,11 +28,19 @@ class collection:
 
         self.observation_IDs = None  # done
 
+        self.match_column = None 
+        self.order_column = None 
+        self.class_column = None 
+
         self.units = None # done 
 
+        self.context_is_spectrum = False  # done
         self.context_tensor = None  # done
         self.context_features = None  # done
+        self.spectral_ranges = None  # done
+        self.spectral_centers = None  # done
 
+        self.qpo_reserved_words = None
         self.qpo_tensor = None  # done
         self.num_qpos = None  # done
         self.max_simultaneous_qpos = None  # done
@@ -68,58 +74,94 @@ class collection:
 
     def load(
         self,
+        context_data,
+        qpo_data, 
+        context_preprocess,
+        qpo_preprocess=None,
+        approach:str,
+        match_column:str,
+        order_column:str,
+
+
+        units:dict=None,
+
         qpo_csv: str,
         context_csv: str,
-        context_preprocess,
-        approach:str,
-        qpo_preprocess=None,
-        units:dict=None) -> None:
+        ) -> None:
 
         r"""
-        _Class method for loading collection object_
+        
+        _Load collection object with QPO and context data for processing_
 
         Parameters
         ----------
+        context_data : `pd.DataFrame` or `astropy.table.Table`
+            Brief description
 
-        qpo_csv : `str`
-            File path to correctly formatted csv file with QPO information
+        qpo_data : `pd.DataFrame` or `astropy.table.Table`
+            Brief description
+        
+        match_column : `str`
+            Needs to be the same for both `qpo_data` and `context_data` ... traditionally I've used observation IDs for linking QPO data with context data, so internally, the match_column values are referenced in the code as observation_IDs (maybe add to Notes)
 
-        context_csv : `str`
-            File path to correctly formatted csv file with context information
-
-        context_preprocess : `dict` or `str`
-            Fix this
-
-        approach : str
-            Either "regression" or "classification" 
-
-        qpo_preprocess : `dict` or `str`
-            Fix this. If none but approach is regression, then all features will be "locally" min-max normalized. 
 
         Returns
         -------
 
+        Notes
+        -----
+
+        - Classification qpo_data should only have two columns: match_column and whatever numeric column is used for class. 
+        
+        
+        _Class method for loading collection object_
+        Parameters
+        ----------
+        qpo_csv : `str`
+            File path to correctly formatted csv file with QPO information
+        context_csv : `str`
+            File path to correctly formatted csv file with context information
+        context_preprocess : `dict` or `str`
+            Fix this
+        approach : str
+            Either "regression" or "classification" 
+        qpo_preprocess : `dict` or `str`
+            Fix this. If none but approach is regression, then all features will be "locally" min-max normalized. 
+        Returns
+        -------
         """
 
         self.dont_do_twice("load")
 
         from collections import Counter
         from qpoml.utilities import preprocess1d
+        from astropy.table import Table
 
-        # check so you can do it once it's already been loaded or evaluated
+        context_df = pd.DataFrame()
+        qpo_df = pd.DataFrame() 
 
-        ### CONTEXT ###
+        if type(context_data) is Table: 
+            context_df = context_data.to_pandas()
 
-        context_df = pd.read_csv(context_csv).sample(
-            frac=1, random_state=self.random_state
-        )  # shuffle
-        temp_df = context_df.drop(columns=["observation_ID"])
+        else: 
+            context_df = context_data 
 
-        observation_IDs = list(context_df["observation_ID"])
+        if type(qpo_data) is Table: 
+            qpo_df = qpo_data.to_pandas()
+
+        else: 
+            qpo_df = qpo_data
+
+        # Prepare Context Data # 
+
+        context_df = context_df.sample(frac=1, random_state=self.random_state) # randomly shuffle rows 
+        
+        temp_df = context_df.drop(columns=[match_column])
+        
+        observation_IDs = list(context_df[match_column])
         context_features = list(temp_df)
         context_tensor = np.array(temp_df)
 
-        # GET CONTEXT READY # 
         transposed = np.transpose(context_tensor)
         for index, arr in enumerate(transposed):
             arr, (_, _, _) = preprocess1d(arr, context_preprocess[context_features[index]])
@@ -127,27 +169,30 @@ class collection:
 
         context_tensor = np.transpose(transposed)
 
-        ### QPO ###
+        # Prepare QPO Data # 
 
-        qpo_df = pd.read_csv(qpo_csv)
         qpo_tensor = []
-        
+        qpo_reserved_words = [match_column, order_column]
+
+        self.qpo_reserved_words = qpo_reserved_words
+
         if approach == 'regression':
             num_qpos = []
-            qpo_features = [i for i in list(qpo_df) if i not in self.qpo_reserved_words]
+            qpo_features = np.setdiff1d(list(qpo_df), qpo_reserved_words)
 
-            max_simultaneous_qpos = Counter(qpo_df["observation_ID"]).most_common(1)[0][1]
+            max_simultaneous_qpos = Counter(qpo_df[match_column]).most_common(1)[0][1]
             max_length = max_simultaneous_qpos * len(qpo_features)
 
             qpo_preprocess1d_tuples = {}
 
             for qpo_feature in qpo_features:
-                if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
+                if qpo_feature not in qpo_reserved_words:  # reserved QPO words
                     
                     preprocess_method = None 
 
                     if qpo_preprocess is None: 
                         preprocess_method = 'normalize'
+                    
                     else: 
                         preprocess_method = qpo_preprocess[qpo_feature]
 
@@ -160,18 +205,14 @@ class collection:
             self.qpo_preprocess1d_tuples = qpo_preprocess1d_tuples
 
             for observation_ID in observation_IDs:
-                sliced_qpo_df = qpo_df.loc[qpo_df["observation_ID"] == observation_ID]
-                sliced_qpo_df = sliced_qpo_df.sort_values(by="frequency")
+                sliced_qpo_df = qpo_df.loc[qpo_df[match_column] == observation_ID]
+                sliced_qpo_df = sliced_qpo_df.sort_values(by=order_column)
 
                 num_qpos.append(len(sliced_qpo_df.index))
 
-                if "order" in list(sliced_qpo_df):
-                    sliced_qpo_df = sliced_qpo_df.sort_values(by="order")
-                    sliced_qpo_df = sliced_qpo_df.drop(columns=["order"])
-
                 # keep track of reserved words
                 qpo_vector = np.array(
-                    sliced_qpo_df.drop(columns=["observation_ID"])
+                    sliced_qpo_df.drop(columns=[match_column])
                 ).flatten()
 
                 qpo_tensor.append(qpo_vector)
@@ -185,23 +226,25 @@ class collection:
             self.max_simultaneous_qpos = max_simultaneous_qpos
             self.num_qpos = num_qpos
 
-        else: 
-            # trust they are in the same order for now, force later
+        elif approach == 'classification': 
+
             qpo_columns = np.array(list(qpo_df))
             
-            qpo_df = context_df.merge(qpo_df, on='observation_ID')
+            qpo_df = context_df.merge(qpo_df, on=match_column)
 
             qpo_df = qpo_df[qpo_columns]
 
-            class_column_name = qpo_columns[qpo_columns!='observation_ID'][0]
+            class_column_name = qpo_columns[qpo_columns!=match_column][0]
+            self.class_column = class_column_name 
 
-            #temp_merged = pd.read_csv(context_csv).merge(qpo_df, on='observation_ID') # make sure they're in same order. do something similiar for regression? 
-            #qpo_tensor = np.array(qpo_df[class_column])
-            #qpo_tensor = qpo_tensor.reshape(qpo_tensor.shape[0], 1)
-            qpo_tensor = np.array(qpo_df[class_column_name]) # ravel/reshape this? 
+            qpo_tensor = np.array(qpo_df[class_column_name]) 
 
-        ### UPDATE ATTRIBUTES ###
-        self.observation_IDs = observation_IDs
+        else: 
+            raise Exception('approach must be "classification" or "regression"')
+
+        ### Update Attributes ###
+
+        self.observation_IDs = np.array(observation_IDs)
         
         self.context_tensor = context_tensor
         self.context_features = context_features
@@ -209,8 +252,14 @@ class collection:
 
         self.units = units
 
+        self.match_column = match_column
+        self.order_column = order_column
+
         self.loaded = True
-        self.classification_or_regression = approach 
+        if approach == 'classification': 
+            self.classification_or_regression = 0 
+        elif approach == 'regression':
+            self.classification_or_regression  = 1  
 
     ## EVALUATE ##
 
@@ -222,38 +271,31 @@ class collection:
         folds: int = None,
         repetitions: int = None, 
         hyperparameter_dictionary:dict=None,
-        stratify:bool=True) -> None:
+        stratify=None) -> None:
         r"""
-        _Evaluate an already initiated and loaded model_
 
+        _Evaluate an already initiated and loaded model_
         Parameters
         ----------
-
         model : `object`
-            An initialized regressor object from another class, e.g. sklearn. It will be cloned and then have parameters reset, so it's okay (it's actually nesessary) that it is initalized
-
+            An initialized regressor object from another class, e.g. sklearn. It will be cloned and then have parameters reset, so it's okay (it's actually necessary) that it is initialized. Best if model is from sklearn, but works with keras and xgboost as well. 
         evaluation_approach : `str`
             Can be `default` or `k-fold` ... Fix this!
-
         test_proportion : `float`
             Default is `0.1`; proportion of values to reserve for test set
-
         folds : `int`
             Default is `None`; if set to some integer, the model will be validated via K-Fold validation, with `K=folds`
-
-        stratify : bool 
-            if True (default) stratifies splitting on class output vector 
-
+        stratify : bool or dict
+            if True (default) stratifies splitting on class output vector. If it is a dictionary, then the dictionary needs to have keys as observations and the corresponding items as the values upon which they will be fed and stratified on. can only be boolean if clasification. otherwise, needs to be dictionary. dictionary works for reg or class tho. needs to have 'observation_ID':[] and 'class':[] for stratification
         Returns
         -------
-
-        Notes / To-Do 
+        To-Do 
         -----
-
-        - Need to implement stratify for reg!
-
         - fix classification_or_regression to easier format (e.g. boolean) 
-
+        Notes 
+        -----
+        - I know I already said this elsewhere, but stratify can only be bool for type(load approach) == bool. Otherwise, especially for regression, it needs to be a dictionary of form {'observation_ID':[], 'class':[]}
+        - Default does not stratify! only k-fold or repeat k-fold! 
         """
 
         self.check_loaded("evaluate")
@@ -265,8 +307,11 @@ class collection:
         random_state = self.random_state
         context_tensor = self.context_tensor
         qpo_tensor = self.qpo_tensor
-        observation_IDs = np.array(self.observation_IDs)
+        observation_IDs = self.observation_IDs
         classification_or_regression = self.classification_or_regression
+        
+        match_column = self.order_column
+        class_column = self.class_column 
 
         train_indices = []
         test_indices = []
@@ -285,12 +330,20 @@ class collection:
         if evaluation_approach == "k-fold" and folds is not None:
 
             if repetitions is None:
-                if classification_or_regression == 'classification' and stratify: 
+                if stratify is not None: 
+                    if type(stratify) is bool and classification_or_regression==0: 
+                        kf = StratifiedKFold(n_splits=folds) 
+                        split = list(kf.split(X=context_tensor, y=qpo_tensor))  
 
-                    # CONFIRMED IT GOES HERE! #
+                    elif type(stratify) is dict: 
+                        stratify_df = pd.DataFrame()
+                        stratify_df[match_column] = observation_IDs # need to fix this so match_column is saved and used
+                        stratify_df = stratify_df.merge(pd.DataFrame.from_dict(stratify), on=match_column) 
+                        kf = StratifiedKFold(n_splits=folds) 
+                        split = list(kf.split(X=context_tensor, y=stratify_df[class_column])) 
 
-                    kf = StratifiedKFold(n_splits=folds) 
-                    split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
+                    else: 
+                        raise Exception('stratify must be None or a dictionary') 
 
                 else: 
                     kf = KFold(n_splits=folds)
@@ -299,11 +352,22 @@ class collection:
             else:
                 from sklearn.model_selection import RepeatedKFold
 
-                if classification_or_regression == 'classification' and stratify: 
+                if stratify is not None: 
+                    if type(stratify) is bool and classification_or_regression==0: 
+                        kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
+                        split = list(kf.split(X=context_tensor, y=qpo_tensor))  
 
 
-                    kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
-                    split = list(kf.split(X=context_tensor, y=qpo_tensor)) 
+                    elif type(stratify) is dict: 
+                        stratify_df = pd.DataFrame()
+                        stratify_df[match_column] = observation_IDs
+                        stratify_df = stratify_df.merge(pd.DataFrame.from_dict(stratify), on=match_column) 
+
+                        kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
+                        split = list(kf.split(X=context_tensor, y=stratify_df[class_column])) 
+
+                    else:
+                        raise Exception('stratify must be None or a dictionary')
 
                 else: 
 
@@ -314,15 +378,14 @@ class collection:
                 train_indices.append(tr)
                 test_indices.append(te)
 
-            #train_indices = np.array(train_indices).astype(int)
-            #test_indices = np.array(test_indices).astype(int)
-
             for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
                 X_train_fold = np.array(context_tensor[train_indices_fold])
                 X_test_fold = np.array(context_tensor[test_indices_fold])
                 y_train_fold = np.array(qpo_tensor[train_indices_fold])
                 y_test_fold = np.array(qpo_tensor[test_indices_fold])
                 
+                # FIX THIS SO IT CHECKS IF KERAS, SKLEARN, OR XGBOOST! # 
+
                 local_model = sklearn.base.clone(model)
 
                 if hyperparameter_dictionary is not None:
@@ -417,19 +480,14 @@ class collection:
     def get_performance_statistics(self, predicted_feature_name:str=None):
         r"""
         _Return model performance statistics_
-
         Parameters
         ----------
-
         Returns
         -------
-
         statistics : `dict`
             Dictionary of performance statistics. Currently contains `mae` and `mse`
-
         predicted_feature_name : str
             If not None, this feature name will be used to undo the preproccessing on the vector. 
-
         """
 
         self.check_loaded_evaluated("performance_statistics")
@@ -505,24 +563,16 @@ class collection:
     def gridsearch(self, model, parameters: dict, n_jobs: int = None):
         r"""
         _Run five fold exhaustive grid search for hyperparameter tuning_
-
         Parameters
         ----------
-
         model :
-
         parameters :
-
         n_jobs :
-
         Returns
         -------
-
         Notes / To-Do 
         -------------
-
         - need to fix scoring so users can set  
-
         """
 
         self.check_loaded("grid_search")
@@ -571,13 +621,10 @@ class collection:
     def correlation_matrix(self):
         r"""
         _Class wrapper to `utils.correlation_matrix`_
-
         Parameters
         ----------
-
         Returns
         -------
-
         fix after adding to utils correlation matrix docs!
         """
 
@@ -627,10 +674,8 @@ class collection:
         
         Arguments
         ---------
-
         feature_name : str
             Since preprocessing is handled under the hood within the collection class, users won't have access to their preprocess1d tuples. Thus, they need to also give the name of the feature (e.g. 'frequency') so this method can locate a saved copy of the preprocess1d tuple that matches with an output QPO feature that was registered when the collection object was loaded.
-
         '''
 
 
@@ -737,7 +782,7 @@ class collection:
 
     ### POST EVALUATION ###
 
-    def plot_results_regression(self, feature_name:str, which:list, ax = None, upper_lim_factor:float=1.025, fold:int = None):
+    def plot_results_regression(self, feature_name:str, which:list, ax = None, upper_lim_factor:float=1.025, fold:int = None, font_scale:float=1.15):
         
         self.check_evaluated("plot_results_regression")
         from qpoml.plotting import plot_results_regression
@@ -757,9 +802,9 @@ class collection:
         
         unit = self.units[feature_name]
 
-        plot_results_regression(regression_x=regression_x, regression_y=regression_y, y_test=None, predictions=None, feature_name=feature_name, unit=unit, which=None, ax=ax, upper_lim_factor=upper_lim_factor)
+        plot_results_regression(regression_x=regression_x, regression_y=regression_y, y_test=None, predictions=None, feature_name=feature_name, unit=unit, which=None, ax=ax, upper_lim_factor=upper_lim_factor, font_scale=font_scale)
 
-    def plot_feature_importances(self, model, fold:int=None, kind:str='tree-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2, save_path:str=None):
+    def plot_feature_importances(self, model, fold:int=None, kind:str='tree-shap', style:str='bar', ax=None, cut:float=2, sigma:float=2.576, hline:bool=False, save_path:str=None):
         
         self.check_evaluated("plot_feature_importances")
         from qpoml.plotting import plot_feature_importances
@@ -776,7 +821,7 @@ class collection:
 
             plot_feature_importances(model=model, X_test=X_test, y_test=y_test, feature_names=feature_names, 
                                      kind=kind, style=style, ax=ax, cut=cut, sigma=sigma, 
-                                     mean_importances_df=mean_importances_df, importances_df=importances_df)
+                                     mean_importances_df=mean_importances_df, importances_df=importances_df, hline=hline)
 
             if save_path is not None: 
                 importances_df.to_csv(save_path, index=False)
@@ -789,13 +834,10 @@ class collection:
     def plot_fold_performance(self, statistic: str = "mae", ax=None):
         r"""
         _Class method for visualizing predictive performance across different folds of test data_
-
         Parameters
         ----------
-
         statistic : `str`
             Either 'mse' for mean squared error, or 'mae' for median absolute error
-
         Returns
         -------
         """
@@ -838,19 +880,16 @@ class collection:
 
     #### CLASSIFICATION ####
 
-    def roc_and_auc(self): 
+    def roc_and_auc(self, fold:int=None): 
         r'''
         
         Notes
         -----
-
         - Portions of this routine were taken from an sklearn documentation example that can be found at this [link](https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html?highlight=roc+curve)
-
         '''
 
         from qpoml.utilities import roc_and_auc
         from sklearn.metrics import roc_curve, auc
-
         self.check_evaluated('roc_and_auc')
 
         if self.classification_or_regression=='classification': 
@@ -860,7 +899,7 @@ class collection:
             std_tpr = None
             std_auc = None
 
-            if len(predictions)>2: 
+            if len(predictions)>2 and fold is None: 
                 mean_fpr = np.linspace(0, 1, 100)
                 tprs = []
                 aucs = []
@@ -891,7 +930,7 @@ class collection:
                 auc = mean_auc
 
             else: 
-                fpr, tpr, auc = roc_and_auc(y_test[0], predictions[0])
+                fpr, tpr, auc = roc_and_auc(y_test[fold], predictions[fold])
 
             return fpr, tpr, std_tpr, auc, std_auc
 
@@ -910,7 +949,7 @@ class collection:
 
             if fold is not None: 
                 y_test = y_test[fold]
-                predictions = predictions[0]
+                predictions = predictions[fold]
             
             else: 
                 y_test = y_test[0]

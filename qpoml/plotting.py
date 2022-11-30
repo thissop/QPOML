@@ -190,7 +190,6 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     
     Arguments
     ---------
-
     style : str
         Depending on the type of feature importances calculated, it can be different plot. If bar, then mean feature importances will be plotted as bar chart. However, if kind is not default, then style can also be 'box', 'violin', 'errorbar'. 
     
@@ -199,7 +198,6 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     
     sigma : float 
         only applicable if style is 'errorbar' ... sigma used in calculating errorbars 
-
     hline : bool 
         if it's true, median feature importance will be plotted as dashed line, and mean feature importance as dotted line
     
@@ -240,9 +238,7 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
         
         - standard error shows the accuracy of the mean...estimates standard deviation the mean's sampling distribution (SEM = standard error of the mean)
         
-
         - error bars based on the s.e.m. reflect the uncertainty in the mean and its dependency on the sample size
-
         - CI: This is an interval estimate that indicates the reliability of a measurement
         '''
 
@@ -314,9 +310,7 @@ def plot_roc(fpr:np.array, tpr:np.array, std_tpr:float=None, ax=None, auc:float=
     
     Notes
     -----
-
     - Portions of this routine were modified from an sklearn documentation example that can be found at this [link](https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html?highlight=roc+curve)
-
     '''
 
     mpl.rcParams.update(mpl.rcParamsDefault)
@@ -362,13 +356,10 @@ def bias_report(predictions, y_test, feature_names:list, ax:None, fold:int=0):
     
     Arguments
     ---------
-
     predictions 
         - list of shape (m, n) where (m) is number of 'rows' or instances/observations, and (n) is number of features. Can be for multiple folds, zeroth will be selected for study by default
-
     y_test 
         - same, but for true values
-
      
     '''
 
@@ -408,10 +399,8 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
     r'''
     Arguments
     ---------
-
     metric : str
         Name of the metric used to evaluate the models. 
-
     style : str
         'box', 'violin', or 'errorbar' 
     
@@ -419,7 +408,6 @@ def plot_model_comparison(model_names:list, performance_lists:list, style:str='b
         only applicable if style is 'violin' ... from seaborn docs: 'Distance, in units of bandwidth size, to extend the density past the extreme datapoints. Set to 0 to limit the violin range within the range of the observed data (i.e., to have the same effect as trim=True in ggplot.'
     
         **NOTE** this could be fixed by incorporating clip too 
-
     sigma : float 
         only applicable if style is 'errorbar' ... sigma used in calculating errorbars 
     
