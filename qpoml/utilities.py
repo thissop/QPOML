@@ -482,6 +482,8 @@ def roc_and_auc(y_test:numpy.array, predictions:numpy.array):
 
     return fpr, tpr, auc_score
 
+### PROBABLY WILL DELETE EVERYTHING BELOW ### 
+"""
 ### MULTI-MODEL RELATED ###
 
 def bulk_load(n:int, qpo_csv:str, context_csv:str, qpo_preprocess:str, context_preprocess):
@@ -555,6 +557,5 @@ def pca_transform(): # once these happen, context_df and arrays are changed to p
 def mds_transform(): # only applied to context
     self.check_loaded('mds_transform')
 
-
-
 '''
+"""

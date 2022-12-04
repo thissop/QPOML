@@ -78,7 +78,7 @@ class collection:
         qpo_data, 
         context_preprocess,
         qpo_preprocess=None,
-        approach:str,
+        load_approach:str,
         match_column:str,
         order_column:str,
 
@@ -123,10 +123,10 @@ class collection:
             File path to correctly formatted csv file with context information
         context_preprocess : `dict` or `str`
             Fix this
-        approach : str
+        load_approach : str
             Either "regression" or "classification" 
         qpo_preprocess : `dict` or `str`
-            Fix this. If none but approach is regression, then all features will be "locally" min-max normalized. 
+            Fix this. If none but load_approach is regression, then all features will be "locally" min-max normalized. 
         Returns
         -------
         """
@@ -176,7 +176,7 @@ class collection:
 
         self.qpo_reserved_words = qpo_reserved_words
 
-        if approach == 'regression':
+        if load_approach == 'regression':
             num_qpos = []
             qpo_features = np.setdiff1d(list(qpo_df), qpo_reserved_words)
 
@@ -226,7 +226,7 @@ class collection:
             self.max_simultaneous_qpos = max_simultaneous_qpos
             self.num_qpos = num_qpos
 
-        elif approach == 'classification': 
+        elif load_approach == 'classification': 
 
             qpo_columns = np.array(list(qpo_df))
             
@@ -240,7 +240,7 @@ class collection:
             qpo_tensor = np.array(qpo_df[class_column_name]) 
 
         else: 
-            raise Exception('approach must be "classification" or "regression"')
+            raise Exception('load_approach must be "classification" or "regression"')
 
         ### Update Attributes ###
 
@@ -256,9 +256,9 @@ class collection:
         self.order_column = order_column
 
         self.loaded = True
-        if approach == 'classification': 
+        if load_approach == 'classification': 
             self.classification_or_regression = 0 
-        elif approach == 'regression':
+        elif load_approach == 'regression':
             self.classification_or_regression  = 1  
 
     ## EVALUATE ##
@@ -376,7 +376,7 @@ class collection:
 
             for tr, te in split: 
                 train_indices.append(tr)
-                test_indices.append(te)
+                test_indices.append(te) 
 
             for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
                 X_train_fold = np.array(context_tensor[train_indices_fold])
@@ -394,7 +394,7 @@ class collection:
                 local_model.fit(X_train_fold, y_train_fold)
                 prediction = local_model.predict(X_test_fold)
 
-                if classification_or_regression == 'classification':
+                if classification_or_regression == 0:
                     prediction = np.array(prediction).flatten()
 
                 predictions.append(prediction)
@@ -412,7 +412,7 @@ class collection:
             
             temp_idx_arr = np.arange(0, len(qpo_tensor), 1).astype(int)
 
-            if classification_or_regression == 'classification' and stratify: 
+            if classification_or_regression == 0 and stratify: 
                 train_indices_fold, test_indices_fold = train_test_split(temp_idx_arr, test_size=test_proportion, random_state=random_state, stratify=qpo_tensor)
             
             else: 
@@ -423,6 +423,8 @@ class collection:
             y_train_fold = qpo_tensor[train_indices_fold]
             y_test_fold = qpo_tensor[test_indices_fold]
 
+            # FIX FOR KERAS VS SKLEARN/XGBOOST
+
             local_model = sklearn.base.clone(model)
 
             if hyperparameter_dictionary is not None:
@@ -430,7 +432,7 @@ class collection:
 
             local_model.fit(X_train_fold, y_train_fold)
             prediction = local_model.predict(X_test_fold)
-            if classification_or_regression == 'classification': 
+            if classification_or_regression == 0: 
                 prediction = np.array(prediction).flatten()
             predictions.append(prediction)
             evaluated_models.append(local_model)
@@ -447,7 +449,7 @@ class collection:
             test_observation_IDs.append(observation_IDs[test_indices_fold])
 
         else:
-            raise Exception("")
+            raise Exception("evaluation_approach must be equal to 'k-fold' or 'default'. In former case, folds must be defined as an integer as well.")
 
         self.evaluation_approach = evaluation_approach
 
@@ -473,15 +475,25 @@ class collection:
 
     # SUPERFLUOUS #
 
-    # what does sandman mean in the old slang? e.g. in hushaby song
+    # what does sandman mean in the old slang? e.g. in the song "hushaby"
 
     ## UTILITIES ##
 
-    def get_performance_statistics(self, predicted_feature_name:str=None):
+    def get_performance_statistics(self, predicted_feature_name:str=None, fold:int=0, average_across_folds:bool=False):
         r"""
         _Return model performance statistics_
         Parameters
         ----------
+
+        predicted_feature_name : `str`
+            Which feature to return performance statistics for (should be one of the columns in the qpo_data)
+
+        fold : int 
+            If k-fold was used, which fold to get performance statistics from (default 0)
+
+        average_across_folds : bool 
+            Combine all folds before calculating statistics across all folds (default False)
+
         Returns
         -------
         statistics : `dict`
@@ -507,22 +519,21 @@ class collection:
             predictions = predictions[0].flatten()
             y_test = y_test[0].flatten()
 
-            if classification_or_regression == 'classification':
+            if classification_or_regression == 0:
         
                 statistics['accuracy'] = [accuracy_score(y_test, predictions)]
                 statistics['precision'] = [precision_score(y_test, predictions)]
                 statistics['recall'] = [recall_score(y_test, predictions)]
                 statistics['f1'] = [f1_score(y_test, predictions)]
 
-
             else: 
                 
                 statistics["mse"] = [mean_squared_error(y_test, predictions)]
                 statistics["mae"] = [mean_absolute_error(y_test, predictions)]
 
-        else:
+        elif average_across_folds:
             
-            if classification_or_regression == 'classification':
+            if classification_or_regression == 0:
 
                 accuracy = []
                 precision = []
@@ -558,6 +569,23 @@ class collection:
                 statistics["mse"] = mse
                 statistics["mae"] = mae
 
+        else:  
+            predictions = predictions[fold].flatten()
+            y_test = y_test[fold].flatten()
+
+            if classification_or_regression == 0:
+        
+                statistics['accuracy'] = [accuracy_score(y_test, predictions)]
+                statistics['precision'] = [precision_score(y_test, predictions)]
+                statistics['recall'] = [recall_score(y_test, predictions)]
+                statistics['f1'] = [f1_score(y_test, predictions)]
+
+
+            else: 
+                
+                statistics["mse"] = [mean_squared_error(y_test, predictions)]
+                statistics["mae"] = [mean_absolute_error(y_test, predictions)]
+
         return statistics
 
     def gridsearch(self, model, parameters: dict, n_jobs: int = None):
@@ -583,14 +611,14 @@ class collection:
         classification_or_regression = self.classification_or_regression
 
         if n_jobs is None:
-            if classification_or_regression == 'classification':
+            if classification_or_regression == 0:
                 clf = GridSearchCV(model, parameters, scoring='f1')
 
             else: 
                 clf = GridSearchCV(model, parameters, scoring='neg_mean_absolute_error')
         
         else:
-            if classification_or_regression == 'classification':
+            if classification_or_regression == 0:
                 clf = GridSearchCV(model, parameters, n_jobs=n_jobs, scoring='f1')
 
             else: 
