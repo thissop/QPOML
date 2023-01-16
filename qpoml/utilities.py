@@ -109,7 +109,7 @@ def pairwise_compare_models(model_names:list, model_score_arrays:list, n_train:i
     model_score_arrays = np.array(model_score_arrays)[idx]
 
     model_n = len(model_names)
-
+    # I am not sure what 
     for i, first_name in enumerate(model_names):   
         first_score_arr = model_score_arrays[i]   
         first_average = np.mean(first_score_arr)
