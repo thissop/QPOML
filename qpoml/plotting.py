@@ -9,14 +9,26 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LinearSegmentedColormap
 
-wh1 = False
-if os.path.exists('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle'):
-    wh1 = True 
 
-if wh1: 
-    plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
-else: 
-    plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+wh1 = False
+m1 = False
+wsl = False
+
+wh1_stylesheet = '/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle'
+mac_stylesheet = '/Users/yaroslav/Documents/GitHub/QPOML/qpoml/stylish.mplstyle'
+wsl_stylesheet = '/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle'
+
+if os.path.exists(wh1_stylesheet):
+    wh1 = True 
+    plt.style.use(wh1_stylesheet)
+
+elif os.path.exists(mac_stylesheet):
+    m1 = True
+    plt.style.use(mac_stylesheet)
+
+elif os.path.exists(wsl_stylesheet):
+    wsl = True
+    plt.style.use(wsl_stylesheet)
 
 #plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish-2.mplstyle')
 #sns.set_style('ticks')
@@ -207,10 +219,16 @@ def plot_feature_importances(model, X_test, y_test, feature_names:list, kind:str
     import scipy 
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    if wh1: 
-        plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
-    else: 
-        plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+
+    if wh1:
+        plt.style.use(wh1_stylesheet)
+
+    elif m1:
+        plt.style.use(mac_stylesheet)
+
+    elif wsl:
+        plt.style.use(wsl_stylesheet)
+
     sns.set_context('paper')
 
     #sns.set_context('paper')
@@ -274,10 +292,15 @@ def plot_confusion_matrix(y_test:numpy.array, predictions:numpy.array, auc:float
     from qpoml.utilities import confusion_matrix 
 
     mpl.rcParams.update(mpl.rcParamsDefault)
-    if wh1: 
-        plt.style.use('/ar1/PROJ/fjuhsd/personal/thaddaeus/github/QPOML/qpoml/stylish.mplstyle')
-    else: 
-        plt.style.use('/mnt/c/Users/Research/Documents/GitHub/QPOML/qpoml/stylish.mplstyle')
+    if wh1:
+        plt.style.use(wh1_stylesheet)
+
+    elif m1:
+        plt.style.use(mac_stylesheet)
+
+    elif wsl:
+        plt.style.use(wsl_stylesheet)
+
     sns.set_context('paper', font_scale=1.4)
 
     internal = False 

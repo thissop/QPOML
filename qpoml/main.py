@@ -34,11 +34,15 @@ class collection:
 
         self.context_is_spectrum = False  # done
         self.context_tensor = None  # done
+        self.context_tensor_train = None 
+        self.context_tensor_test = None 
         self.context_features = None  # done
         self.spectral_ranges = None  # done
         self.spectral_centers = None  # done
 
         self.qpo_tensor = None  # done
+        self.qpo_tensor_train = None 
+        self.qpo_tensor_test = None 
         self.num_qpos = None  # done
         self.max_simultaneous_qpos = None  # done
         self.qpo_features = None  # done
@@ -61,8 +65,8 @@ class collection:
         self.y_train = None  # done
         self.y_test = None  # done
 
-        self.train_observationIDs = None 
-        self.test_observationIDs = None
+        self.train_observationIDs = None # done
+        self.test_observationIDs = None # done
 
         self.evaluated_models = None  # done
         self.predictions = None  # done
@@ -213,6 +217,7 @@ class collection:
         model,
         evaluation_approach: str,
         test_proportion: float = 0.1,
+        val_proportion:float = 0.1, 
         folds: int = None,
         repetitions: int = None, 
         hyperparameter_dictionary:dict=None,
@@ -268,6 +273,14 @@ class collection:
         train_observation_IDs = []
         test_observation_IDs = []
 
+        # NEED TO SET self.context_tensor_train 
+        # NEED TO SET self.qpo_tensor_train
+
+        context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(self.context_tensor, self.qpo_tensor, test_size=test_proportion)
+
+        self.context_tensor_test = context_tensor_test
+        self.qpo_tensor_test = qpo_tensor_test 
+
         if evaluation_approach == "k-fold" and folds is not None:
 
             if repetitions is None:
@@ -297,7 +310,6 @@ class collection:
                     if type(stratify) is bool and classification_or_regression=='classification': 
                         kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
                         split = list(kf.split(X=context_tensor, y=qpo_tensor))  
-
 
                     elif type(stratify) is dict: 
                         stratify_df = pd.DataFrame()
@@ -538,7 +550,7 @@ class collection:
             else: 
                 clf = GridSearchCV(model, parameters, n_jobs=n_jobs, scoring='neg_mean_absolute_error')
 
-        clf.fit(self.context_tensor, self.qpo_tensor)
+        clf.fit(self.context_tensor_train, self.qpo_tensor_train)
 
         results = clf.cv_results_
 

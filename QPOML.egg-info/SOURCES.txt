@@ -19,8 +19,8 @@ docs/qpoml/tests/index.html
 docs/qpoml/tests/current/current_test.html
 docs/qpoml/tests/current/index.html
 qpoml/__init__.py
+qpoml/dev_main.py
 qpoml/main.py
-qpoml/new_main.py
 qpoml/plotting.py
 qpoml/stylish-2.mplstyle
 qpoml/stylish-3.mplstyle
