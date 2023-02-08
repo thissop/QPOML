@@ -217,10 +217,11 @@ class collection:
         model,
         evaluation_approach: str,
         test_proportion: float = 0.1,
-        val_proportion:float = 0.1, 
         folds: int = None,
         repetitions: int = None, 
         hyperparameter_dictionary:dict=None,
+        gridsearch_dictionary:dict=None,
+        n_jobs:int=None,
         stratify=None) -> None:
         r"""
         _Evaluate an already initiated and loaded model_
@@ -245,13 +246,16 @@ class collection:
         -----
         - I know I already said this elsewhere, but stratify can only be bool for type(load approach) == bool. Otherwise, especially for regression, it needs to be a dictionary of form {'observation_ID':[], 'class':[]}
         - Default does not stratify! only k-fold or repeat k-fold! 
+
+        - hyperparameter_dictionary gets fed in to the model for actual testing, but gridsearch_dictionary is a dictionary of lists that are used as parameter combinations for gridsearch
+
         """
 
         self.check_loaded("evaluate")
         self.dont_do_twice("evaluate")
 
         import sklearn 
-        from sklearn.model_selection import train_test_split, KFold, StratifiedKFold, RepeatedStratifiedKFold 
+        from sklearn.model_selection import train_test_split, KFold, StratifiedKFold, RepeatedStratifiedKFold, RepeatedKFold, GridSearchCV
 
         random_state = self.random_state
         context_tensor = self.context_tensor
@@ -276,10 +280,319 @@ class collection:
         # NEED TO SET self.context_tensor_train 
         # NEED TO SET self.qpo_tensor_train
 
-        context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(self.context_tensor, self.qpo_tensor, test_size=test_proportion)
+        # need to incorporate stratification! 
 
+        train_observation_IDs, test_observation_IDs, context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(self.observation_IDs, self.context_tensor, self.qpo_tensor, test_size=test_proportion)
+
+        self.context_tensor_train = context_tensor_train
         self.context_tensor_test = context_tensor_test
+        self.qpo_tensor_train = qpo_tensor_train
         self.qpo_tensor_test = qpo_tensor_test 
+        self.train_observation_IDs = train_observation_IDs
+        self.test_observation_IDs = test_observation_IDs
+
+
+        # GRID SEARCH --> MAKE INTERNAL, FIX PIPELINE!
+
+        def gridsearch(model, X, y, gridsearch_dictionary, class_or_reg, stratify, folds, num_qpo_features:int, random_state, repetitions:int=None): 
+            r'''
+            
+            Arguments
+            ---------
+
+            stratify : 
+                - if regression, stratify can be two things: 'num_qpo', or a two colummn dataframe in itself with the columns 'observation_ID' and 'class', with 'class' being something categorical that can be split on. 
+                - if classification, it's just True or False
+
+            Notes
+            -----
+                - need to let it save results! 
+
+
+            '''
+
+            from itertools import product
+
+            if class_or_reg == 'classification':
+
+                cv = None
+                
+                if stratify: 
+                    if repetitions is not None: 
+                        cv = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                    else: 
+                        cv = StratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+
+                else: 
+                    if repetitions is not None: 
+                        cv = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                    else: 
+                        cv = KFold(n_splits=folds, random_state=random_state)
+
+                clf = GridSearchCV(model, gridsearch_dictionary, scoring='f1', cv=cv)
+
+                clf.fit(X, y)
+
+                results = clf.cv_results_
+
+                scores = np.array(results["mean_test_score"])
+        
+                stds = results['std_test_score']
+                params = results["params"]
+
+                sort_idx = np.argsort(results['rank_test_score'])
+                best_params = clf.best_params_
+
+                scores = np.array(scores)[sort_idx]
+                stds = np.array(stds)[sort_idx]
+                params = np.array(params)[sort_idx]
+
+                best_model_config = sklearn.base.clone(model)
+                best_model_config = best_model_config.set_params(**best_params)
+
+            else:
+
+                params_grid = []
+                items = sorted(gridsearch_dictionary.items())
+                keys, values = zip(*items)
+                for v in product(*values):
+                    params = dict(zip(keys, v))
+                    params_grid.append(params)
+
+                params = params_grid
+
+                if stratify is not None: 
+                    
+                    qpos_per_obs = []
+                    for i in qpo_tensor: 
+                        num = int(len(np.where(i!=0.1)[0])/(num_qpo_features))
+                        qpos_per_obs.append(num)
+
+                    if repetitions is not None: 
+                        kf = RepeatedStratifiedKFold(n_splits=folds)
+
+                        if type(stratify) is str: 
+                            split = list(kf.split(X=X, y=qpos_per_obs)) 
+                        else: 
+                            stratify_df = pd.DataFrame()
+                            stratify_df['observation_ID'] = observation_IDs
+                            stratify_df = stratify_df.merge(stratify, on='observation_ID') 
+                            split = list(kf.split(X=X, y=stratify_df['class'])) 
+                    
+                    else: 
+                        kf = StratifiedKFold(n_splits=folds) 
+                        
+                        if type(stratify) is str: 
+                            split = list(kf.split(X=X, y=qpos_per_obs))
+                        
+                        else: 
+                            stratify_df = pd.DataFrame()
+                            stratify_df['observation_ID'] = observation_IDs
+                            stratify_df = stratify_df.merge(stratify, on='observation_ID') 
+                            split = list(kf.split(X=X, y=stratify_df['class'])) 
+
+                else: 
+                    if repetitions is not None: 
+                        kf = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                    else: 
+                        kf = KFold(n_splits=folds)
+                    
+                    split = list(kf.split(X))
+
+                train_indices = []
+                test_indices = []
+
+                for tr, te in split: 
+                    train_indices.append(tr)
+                    test_indices.append(te)
+
+                scores = []
+                stds = []
+
+                for param_dict in params_grid: 
+                    fold_scores = []
+
+                    for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
+                        X_train_fold = np.array(X[train_indices_fold])
+                        X_test_fold = np.array(X[test_indices_fold])
+                        y_train_fold = np.array(y[train_indices_fold])
+                        y_test_fold = np.array(y[test_indices_fold])
+                        
+                        local_model = sklearn.base.clone(model)
+
+                        if hyperparameter_dictionary is not None:
+                            local_model = local_model.set_params(**param_dict)
+                        
+                        local_model.fit(X_train_fold, y_train_fold)
+
+                        score = local_model.score(X_test_fold, y_test_fold)
+                        fold_scores.append(score)
+
+                    scores.append(np.mean(fold_scores))
+                    stds.append(np.std(fold_scores))
+
+                best_params = params_grid[np.argmax(scores)] # is highest score best?
+
+            best_model_config = sklearn.base.clone(model)
+            best_model_config = best_model_config.set_params(**best_params)
+
+            return best_model_config, scores, stds, params, best_params
+
+        #def reg_
+            
+
+        cv = None 
+        if folds is not None: 
+            if stratify is not None: 
+                if repetitions is not None: 
+                    cv = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+
+                else: 
+                    if self.classification_or_regression == 'classification':
+                        cv = StratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                    else: 
+                        strata = []
+                    
+            else: 
+                if repetitions is not None: 
+                    cv = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                else: 
+                    cv = KFold(n_folds=folds, random_state=random_state)                
+
+
+        if n_jobs is None:
+            if classification_or_regression == 'classification':
+                clf = GridSearchCV(model, gridsearch_dictionary, scoring='f1')
+
+            else: 
+                clf = GridSearchCV(model, gridsearch_dictionary, scoring='neg_mean_absolute_error')
+        
+        else:
+            if classification_or_regression == 'classification':
+                clf = GridSearchCV(model, gridsearch_dictionary, n_jobs=n_jobs, scoring='f1')
+
+            else: 
+                clf = GridSearchCV(model, gridsearch_dictionary, n_jobs=n_jobs, scoring='neg_mean_absolute_error')
+
+        clf.fit(self.context_tensor_train, self.qpo_tensor_train)
+
+        results = clf.cv_results_
+
+        scores = np.array(results["mean_test_score"])
+ 
+        stds = results['std_test_score']
+        params = results["params"]
+
+        sort_idx = np.argsort(results['rank_test_score'])
+        best_params = clf.best_params_
+
+        scores = np.array(scores)[sort_idx]
+        stds = np.array(stds)[sort_idx]
+        params = np.array(params)[sort_idx]
+
+
+
+        # ACTUALLY MAKE PREDICTIONS 
+        local_model = sklearn.base.clone(model)
+
+        if hyperparameter_dictionary is not None:
+            local_model = local_model.set_params(**hyperparameter_dictionary)
+        
+        local_model.fit(context_tensor_train, qpo_tensor_train)
+        prediction = local_model.predict(context_tensor_test)
+
+        if classification_or_regression == 'classification':
+            prediction = np.array(prediction).flatten()
+
+
+
+
+        if evaluation_approach == 'k-fold' and folds is not None: 
+            if repetitions is None:
+                if stratify is not None: 
+                    if type(stratify) is bool and classification_or_regression=='classification': 
+                        kf = StratifiedKFold(n_splits=folds) 
+                        split = list(kf.split(X=context_tensor, y=qpo_tensor))  
+
+                    elif type(stratify) is str: 
+                        stratify_df = pd.DataFrame()
+                        stratify_df['observation_ID'] = observation_IDs
+                        stratify_df = stratify_df.merge(pd.DataFrame.from_dict(stratify), on='observation_ID') 
+                        kf = StratifiedKFold(n_splits=folds) 
+                        split = list(kf.split(X=context_tensor, y=stratify_df['class'])) 
+
+                    else: 
+                        raise Exception('') 
+
+                else: 
+                    kf = KFold(n_splits=folds)
+                    split = list(kf.split(context_tensor))
+
+            else:
+                from sklearn.model_selection import RepeatedKFold
+
+                if stratify is not None: 
+                    if type(stratify) is bool and classification_or_regression=='classification': 
+                        kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
+                        split = list(kf.split(X=context_tensor, y=qpo_tensor))  
+
+                    elif type(stratify) is dict: 
+                        stratify_df = pd.DataFrame()
+                        stratify_df['observation_ID'] = observation_IDs
+                        stratify_df = stratify_df.merge(pd.DataFrame.from_dict(stratify), on='observation_ID') 
+
+                        kf = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state) 
+                        split = list(kf.split(X=context_tensor, y=stratify_df['class'])) 
+
+                    else:
+                        raise Exception('')
+
+                else: 
+
+                    kf = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+                    split = list(kf.split(context_tensor))
+
+            for tr, te in split: 
+                train_indices.append(tr)
+                test_indices.append(te)
+
+            #train_indices = np.array(train_indices).astype(int)
+            #test_indices = np.array(test_indices).astype(int)
+
+            for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
+                X_train_fold = np.array(context_tensor[train_indices_fold])
+                X_test_fold = np.array(context_tensor[test_indices_fold])
+                y_train_fold = np.array(qpo_tensor[train_indices_fold])
+                y_test_fold = np.array(qpo_tensor[test_indices_fold])
+                
+                local_model = sklearn.base.clone(model)
+
+                if hyperparameter_dictionary is not None:
+                    local_model = local_model.set_params(**hyperparameter_dictionary)
+                
+                local_model.fit(X_train_fold, y_train_fold)
+                prediction = local_model.predict(X_test_fold)
+
+                if classification_or_regression == 'classification':
+                    prediction = np.array(prediction).flatten()
+
+                predictions.append(prediction)
+                evaluated_models.append(local_model)
+
+                X_train.append(X_train_fold)
+                X_test.append(X_test_fold)
+                y_train.append(y_train_fold)
+                y_test.append(y_test_fold)
+
+                train_observation_IDs.append(observation_IDs[train_indices_fold])
+                test_observation_IDs.append(observation_IDs[test_indices_fold]) 
+
+        elif evaluation_approach == 'default': 
+            pass 
+
+        else: 
+            raise Exception('')
+
 
         if evaluation_approach == "k-fold" and folds is not None:
 
