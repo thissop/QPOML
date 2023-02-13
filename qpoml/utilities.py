@@ -22,14 +22,21 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
     -----
         - need to let it save results! 
         - incorporate roc and auc to best model that runs after grid search so I can have the the five splits curves and their average still in the paper!!
-
-
     '''
 
     from itertools import product
     import sklearn 
     from sklearn.model_selection import KFold, StratifiedKFold, RepeatedStratifiedKFold, RepeatedKFold, GridSearchCV
     from qpoml.utilities import roc_and_auc
+
+    FPRs = []
+    TPRs = []
+    auc_scores = []
+
+    if stratify is not None and type(stratify) is bool: 
+        if not stratify: 
+            stratify = None
+
 
     if class_or_reg == 'classification':
 
@@ -68,7 +75,14 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
         best_model_config = sklearn.base.clone(model)
         best_model_config = best_model_config.set_params(**best_params)
 
-        
+        for train_index, test_index in cv.split(X):
+            temp_model = sklearn.base.clone(best_model_config)
+            temp_model.train(X[train_index], y[train_index])
+            
+            fpr, tpr, auc_score = roc_and_auc(y[test_index], temp_model.predict(X[test_index]))
+            FPRs.append(fpr)
+            TPRs.append(TPRs)
+            auc_scores.append(auc_score)
 
     else:
 
@@ -81,8 +95,7 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
 
         params = params_grid
 
-        if stratify is not None: 
-            
+        if stratify is not None:
             qpos_per_obs = []
             for i in X: 
                 num = int(len(np.where(i!=0.1)[0])/(num_qpo_features))
@@ -91,8 +104,9 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
             if repetitions is not None: 
                 kf = RepeatedStratifiedKFold(n_splits=folds)
 
-                if type(stratify) is str: 
-                    split = list(kf.split(X=X, y=qpos_per_obs)) 
+                if type(stratify) is bool:
+                    if stratify is True:  
+                        split = list(kf.split(X=X, y=qpos_per_obs)) 
                 else: 
                     stratify_df = pd.DataFrame()
                     stratify_df['observation_ID'] = observation_IDs
@@ -102,8 +116,9 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
             else: 
                 kf = StratifiedKFold(n_splits=folds) 
                 
-                if type(stratify) is str: 
-                    split = list(kf.split(X=X, y=qpos_per_obs))
+                if type(stratify) is bool:
+                    if stratify is True:  
+                        split = list(kf.split(X=X, y=qpos_per_obs))
                 
                 else: 
                     stratify_df = pd.DataFrame()
@@ -155,7 +170,7 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
     best_model_config = sklearn.base.clone(model)
     best_model_config = best_model_config.set_params(**best_params)
 
-    return best_model_config, scores, stds, params, best_params
+    return (best_model_config, best_params), (scores, stds, params), (FPRs, TPRs, auc_scores)
     
 ### BASIC ###
 

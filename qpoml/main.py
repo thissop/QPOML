@@ -73,6 +73,10 @@ class collection:
         self.evaluated_model = None  # done
         self.prediction = None  # done
 
+        self.TPRs = None # done 
+        self.FPRs = None # done 
+        self.auc_scores = None # done 
+
     ## LOAD ##
 
     def load(
@@ -281,20 +285,22 @@ class collection:
                             num = int(len(np.where(i!=0.1)[0])/num_qpo_features)
                             qpos_per_obs.append(num)
                         train_indices, test_indices, train_observation_IDs, test_observation_IDs, context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(indices, observation_IDs, context_tensor, qpo_tensor, test_size=test_proportion, random_state=random_state, stratify=qpos_per_obs)
+                else: 
+                    train_indices, test_indices, train_observation_IDs, test_observation_IDs, context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(indices, observation_IDs, context_tensor, qpo_tensor, test_size=test_proportion, random_state=random_state)
             else: 
                 train_indices, test_indices, train_observation_IDs, test_observation_IDs, context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(indices, observation_IDs, context_tensor, qpo_tensor, test_size=test_proportion, random_state=random_state, stratify=stratify)
         else: 
             train_indices, test_indices, train_observation_IDs, test_observation_IDs, context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(indices, observation_IDs, context_tensor, qpo_tensor, test_size=test_proportion, random_state=random_state)
-
+ 
         # GRID SEARCH --> MAKE INTERNAL, FIX PIPELINE!
 
-        _, scores, stds, params, best_params, fprs, tprs, auc_scores = gridsearch(model=model, observation_IDs=train_observation_IDs, X=context_tensor_train, y=qpo_tensor_train,gridsearch_dictionary=gridsearch_dictionary, class_or_reg=classification_or_regression, stratify=stratify, folds=folds, repetitions=repetitions, random_state=random_state, num_qpo_features=num_qpo_features) # making this default! 
+        (_, best_params), (scores, stds, params), (FPRs, TPRs, auc_scores) = gridsearch(model=model, observation_IDs=train_observation_IDs, X=context_tensor_train, y=qpo_tensor_train, gridsearch_dictionary=gridsearch_dictionary, class_or_reg=classification_or_regression, stratify=stratify, folds=folds, repetitions=repetitions, random_state=random_state, num_qpo_features=num_qpo_features) # making this default! 
 
         local_model = sklearn.base.clone(model)
 
         local_model = local_model.set_params(**best_params)
 
-        local_model.fit(context_tensor_train, context_tensor_test)
+        local_model.fit(context_tensor_train, qpo_tensor_train)
         predictions = local_model.predict(context_tensor_test)
 
         if classification_or_regression == 'classification': 
@@ -322,10 +328,9 @@ class collection:
         self.gridsearch_params = params # done
         self.best_params = best_params # done
 
-        self.val_FPRs 
-        self.val_TPRs 
-        self.val_auc_scores
-
+        self.FPRs = FPRs
+        self.TPRs = TPRs
+        self.auc_scores = auc_scores
 
         ### UPDATE ATTRIBUTES ###
 
@@ -492,7 +497,6 @@ class collection:
 
         self.check_evaluated("feature_importances")
 
-        model = self.evaluated_model
         predictions = self.prediction
         y_test = self.y_test
 
