@@ -7,7 +7,171 @@ import pandas
 import warnings
  
 ## METHODS ## 
+ 
+def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg, stratify, folds, num_qpo_features:int, random_state, repetitions:int=None): 
+    r'''
+    
+    Arguments
+    ---------
 
+    stratify : 
+        - if regression, stratify can be two things: 'num_qpo', or a two colummn dataframe in itself with the columns 'observation_ID' and 'class', with 'class' being something categorical that can be split on. 
+        - if classification, it's just True or False
+
+    Notes
+    -----
+        - need to let it save results! 
+        - incorporate roc and auc to best model that runs after grid search so I can have the the five splits curves and their average still in the paper!!
+    '''
+
+    from itertools import product
+    import sklearn 
+    from sklearn.model_selection import KFold, StratifiedKFold, RepeatedStratifiedKFold, RepeatedKFold, GridSearchCV
+    from qpoml.utilities import roc_and_auc
+
+    FPRs = []
+    TPRs = []
+    auc_scores = []
+
+    if stratify is not None and type(stratify) is bool: 
+        if not stratify: 
+            stratify = None
+
+
+    if class_or_reg == 'classification':
+
+        cv = None
+        
+        if stratify: 
+            if repetitions is not None: 
+                cv = RepeatedStratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+            else: 
+                cv = StratifiedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+
+        else: 
+            if repetitions is not None: 
+                cv = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+            else: 
+                cv = KFold(n_splits=folds, random_state=random_state)
+
+        clf = GridSearchCV(model, gridsearch_dictionary, scoring='f1', cv=cv)
+
+        clf.fit(X, y)
+
+        results = clf.cv_results_
+
+        scores = np.array(results["mean_test_score"])
+
+        stds = results['std_test_score']
+        params = results["params"]
+
+        sort_idx = np.argsort(results['rank_test_score'])
+        best_params = clf.best_params_
+
+        scores = np.array(scores)[sort_idx]
+        stds = np.array(stds)[sort_idx]
+        params = np.array(params)[sort_idx]
+
+        best_model_config = sklearn.base.clone(model)
+        best_model_config = best_model_config.set_params(**best_params)
+
+        for train_index, test_index in cv.split(X):
+            temp_model = sklearn.base.clone(best_model_config)
+            temp_model.train(X[train_index], y[train_index])
+            
+            fpr, tpr, auc_score = roc_and_auc(y[test_index], temp_model.predict(X[test_index]))
+            FPRs.append(fpr)
+            TPRs.append(TPRs)
+            auc_scores.append(auc_score)
+
+    else:
+
+        params_grid = []
+        items = sorted(gridsearch_dictionary.items())
+        keys, values = zip(*items)
+        for v in product(*values):
+            params = dict(zip(keys, v))
+            params_grid.append(params)
+
+        params = params_grid
+
+        if stratify is not None:
+            qpos_per_obs = []
+            for i in X: 
+                num = int(len(np.where(i!=0.1)[0])/(num_qpo_features))
+                qpos_per_obs.append(num)
+
+            if repetitions is not None: 
+                kf = RepeatedStratifiedKFold(n_splits=folds)
+
+                if type(stratify) is bool:
+                    if stratify is True:  
+                        split = list(kf.split(X=X, y=qpos_per_obs)) 
+                else: 
+                    stratify_df = pd.DataFrame()
+                    stratify_df['observation_ID'] = observation_IDs
+                    stratify_df = stratify_df.merge(stratify, on='observation_ID') 
+                    split = list(kf.split(X=X, y=stratify_df['class'])) 
+            
+            else: 
+                kf = StratifiedKFold(n_splits=folds) 
+                
+                if type(stratify) is bool:
+                    if stratify is True:  
+                        split = list(kf.split(X=X, y=qpos_per_obs))
+                
+                else: 
+                    stratify_df = pd.DataFrame()
+                    stratify_df['observation_ID'] = observation_IDs
+                    stratify_df = stratify_df.merge(stratify, on='observation_ID') 
+                    split = list(kf.split(X=X, y=stratify_df['class'])) 
+
+        else: 
+            if repetitions is not None: 
+                kf = RepeatedKFold(n_splits=folds, n_repeats=repetitions, random_state=random_state)
+            else: 
+                kf = KFold(n_splits=folds)
+            
+            split = list(kf.split(X))
+
+        train_indices = []
+        test_indices = []
+
+        for tr, te in split: 
+            train_indices.append(tr)
+            test_indices.append(te)
+
+        scores = []
+        stds = []
+
+        for param_dict in params_grid: 
+            fold_scores = []
+
+            for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
+                X_train_fold = np.array(X[train_indices_fold])
+                X_test_fold = np.array(X[test_indices_fold])
+                y_train_fold = np.array(y[train_indices_fold])
+                y_test_fold = np.array(y[test_indices_fold])
+                
+                local_model = sklearn.base.clone(model)
+
+                local_model.set_params(**param_dict)
+                
+                local_model.fit(X_train_fold, y_train_fold)
+
+                score = sklearn.metrics.r2_score(y_test_fold, local_model.predict(X_test_fold)) # there, now not dependent on sklearn model.score function
+                fold_scores.append(score)
+
+            scores.append(np.mean(fold_scores))
+            stds.append(np.std(fold_scores))
+
+        best_params = params_grid[np.argmax(scores)] # is highest score best? --> yes, seems like scikit learn would be scoring them as regression models. 
+
+    best_model_config = sklearn.base.clone(model)
+    best_model_config = best_model_config.set_params(**best_params)
+
+    return (best_model_config, best_params), (scores, stds, params), (FPRs, TPRs, auc_scores)
+    
 ### BASIC ###
 
 def preprocess1d(x, preprocess, range_low:float=0.1, range_high:float=1.0): 
