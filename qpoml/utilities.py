@@ -8,7 +8,7 @@ import warnings
  
 ## METHODS ## 
  
-def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg, stratify, folds, num_qpo_features:int, random_state, repetitions:int=None): 
+def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg, stratify, folds, num_qpo_features:int, random_state, repetitions:int=None, multiclass:bool=False): 
     r'''
     
     Arguments
@@ -37,7 +37,7 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
         if not stratify: 
             stratify = None
 
-
+    best_model_fold_scores = None
     if class_or_reg == 'classification':
 
         cv = None
@@ -75,14 +75,28 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
         best_model_config = sklearn.base.clone(model)
         best_model_config = best_model_config.set_params(**best_params)
 
-        for train_index, test_index in cv.split(X):
-            temp_model = sklearn.base.clone(best_model_config)
-            temp_model.train(X[train_index], y[train_index])
-            
-            fpr, tpr, auc_score = roc_and_auc(y[test_index], temp_model.predict(X[test_index]))
-            FPRs.append(fpr)
-            TPRs.append(TPRs)
-            auc_scores.append(auc_score)
+        if not multiclass: 
+
+            if stratify: 
+                for train_index, test_index in cv.split(X, y):
+                    temp_model = sklearn.base.clone(best_model_config)
+                    temp_model.fit(X[train_index], y[train_index])
+                    
+                    fpr, tpr, auc_score = roc_and_auc(y[test_index], temp_model.predict(X[test_index]))
+                    FPRs.append(fpr)
+                    TPRs.append(tpr)
+                    auc_scores.append(auc_score)
+
+            else: 
+                for train_index, test_index in cv.split(X):
+                    temp_model = sklearn.base.clone(best_model_config)
+                    temp_model.fit(X[train_index], y[train_index])
+                    
+                    fpr, tpr, auc_score = roc_and_auc(y[test_index], temp_model.predict(X[test_index]))
+                    FPRs.append(fpr)
+                    TPRs.append(tpr)
+                    auc_scores.append(auc_score)
+
 
     else:
 
@@ -159,18 +173,34 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
                 
                 local_model.fit(X_train_fold, y_train_fold)
 
-                score = sklearn.metrics.r2_score(y_test_fold, local_model.predict(X_test_fold)) # there, now not dependent on sklearn model.score function
+                score = sklearn.metrics.mean_absolute_error(y_test_fold, local_model.predict(X_test_fold)) # there, now not dependent on sklearn model.score function
                 fold_scores.append(score)
 
             scores.append(np.mean(fold_scores))
             stds.append(np.std(fold_scores))
 
-        best_params = params_grid[np.argmax(scores)] # is highest score best? --> yes, seems like scikit learn would be scoring them as regression models. 
+        best_params = params_grid[np.argmin(scores)] 
+         # Best Regression Model on Folds
+        best_model_fold_scores = []
+        for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
+            X_train_fold = np.array(X[train_indices_fold])
+            X_test_fold = np.array(X[test_indices_fold])
+            y_train_fold = np.array(y[train_indices_fold])
+            y_test_fold = np.array(y[test_indices_fold])
+            
+            local_model = sklearn.base.clone(model)
+
+            local_model.set_params(**best_params)
+            
+            local_model.fit(X_train_fold, y_train_fold)
+
+            score = sklearn.metrics.mean_absolute_error(y_test_fold, local_model.predict(X_test_fold)) # there, now not dependent on sklearn model.score function
+            best_model_fold_scores.append(score)
 
     best_model_config = sklearn.base.clone(model)
     best_model_config = best_model_config.set_params(**best_params)
 
-    return (best_model_config, best_params), (scores, stds, params), (FPRs, TPRs, auc_scores)
+    return (best_model_config, best_params), (scores, stds, params, best_model_fold_scores), (FPRs, TPRs, auc_scores)
     
 ### BASIC ###
 
@@ -250,7 +280,7 @@ def unprocess1d(modified, preprocess1d_tuple, range_low:float=0.1, range_high:fl
  
 ### "BORROWED" ###
 
-def pairwise_compare_models(model_names:list, model_score_arrays:list, n_train:int, n_test:int, save_dir:str, save_path:str=None, rope:list=[[-0.01, 0.01], 0.95]):
+def pairwise_compare_models(model_names:list, model_score_arrays:list, n_train:int, n_test:int, save_dir:str, save_path:str=None, rope:list=[[-0.01, 0.01], 0.95], decimals=2):
     
     r'''
     
@@ -307,7 +337,9 @@ def pairwise_compare_models(model_names:list, model_score_arrays:list, n_train:i
     pairwise_results_df = pd.DataFrame()
     for i in range(len(temp_columns)): 
         pairwise_results_df[temp_names[i]] = temp_columns[i]
-        
+    
+    pairwise_results_df.round(decimals=decimals)
+
     if save_dir is None: 
         pairwise_results_df.to_csv(f'{save_path}.csv', index=False)
         pairwise_results_df.to_latex(f'{save_path}.tex', index=False)#, float_format="%.6f")
@@ -599,7 +631,7 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-sha
                 explainer = shap.TreeExplainer(model, data=X_test, check_additivity=False)
 
             except Exception as e: 
-                explainer = shap.Explainer(model,X_test, check_additivity=False)
+                explainer = shap.Explainer(model, X_test, check_additivity=False)
 
         shap_values = explainer(X_test).values.T
 

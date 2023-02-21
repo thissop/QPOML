@@ -51,8 +51,6 @@ class collection:
         self.train_indices = None  # done
         self.test_indices = None  # done
 
-        self.evaluation_approach = None  # done
-
         self.qpo_preprocess = None 
         self.context_preprocess = None # not really needed so not implemented yet 
 
@@ -61,8 +59,8 @@ class collection:
         self.y_train = None  # done
         self.y_test = None  # done
 
-        self.train_observationIDs = None # done
-        self.test_observationIDs = None # done
+        self.train_observation_IDs = None # done
+        self.test_observation_IDs = None # done
 
         # Gridsearch Related
         self.gridsearch_scores = None 
@@ -71,11 +69,13 @@ class collection:
         self.best_params = None 
 
         self.evaluated_model = None  # done
-        self.prediction = None  # done
+        self.predictions = None  # done
 
         self.TPRs = None # done 
         self.FPRs = None # done 
         self.auc_scores = None # done 
+
+        self.fold_performances = None # done
 
     ## LOAD ##
 
@@ -217,12 +217,12 @@ class collection:
     def evaluate(
         self,
         model,
-        evaluation_approach: str,
         test_proportion: float = 0.1,
         folds: int = None,
         repetitions: int = None, 
         gridsearch_dictionary:dict=None,
-        stratify=None) -> None:
+        stratify=None, 
+        multiclass:bool=False) -> None:
         
         r"""
         _Evaluate an already initiated and loaded model_
@@ -230,8 +230,6 @@ class collection:
         ----------
         model : `object`
             An initialized regressor object from another class, e.g. sklearn. It will be cloned and then have parameters reset, so it's okay (it's actually nesessary) that it is initalized
-        evaluation_approach : `str`
-            Can be `default` or `k-fold` ... Fix this!
         test_proportion : `float`
             Default is `0.1`; proportion of values to reserve for test set
         folds : `int`
@@ -272,8 +270,6 @@ class collection:
 
         # NEED TO SPLIT HERE STRATIFIED!!
 
-        num_qpo_features = len(self.qpo_features)
-
         if stratify is not None: 
             if type(stratify) is bool: 
                 if stratify: 
@@ -282,7 +278,7 @@ class collection:
                     else: 
                         qpos_per_obs = []
                         for i in qpo_tensor: 
-                            num = int(len(np.where(i!=0.1)[0])/num_qpo_features)
+                            num = int(len(np.where(i!=0.1)[0])/len(self.qpo_features))
                             qpos_per_obs.append(num)
                         train_indices, test_indices, train_observation_IDs, test_observation_IDs, context_tensor_train, context_tensor_test, qpo_tensor_train, qpo_tensor_test = train_test_split(indices, observation_IDs, context_tensor, qpo_tensor, test_size=test_proportion, random_state=random_state, stratify=qpos_per_obs)
                 else: 
@@ -294,7 +290,7 @@ class collection:
  
         # GRID SEARCH --> MAKE INTERNAL, FIX PIPELINE!
 
-        (_, best_params), (scores, stds, params), (FPRs, TPRs, auc_scores) = gridsearch(model=model, observation_IDs=train_observation_IDs, X=context_tensor_train, y=qpo_tensor_train, gridsearch_dictionary=gridsearch_dictionary, class_or_reg=classification_or_regression, stratify=stratify, folds=folds, repetitions=repetitions, random_state=random_state, num_qpo_features=num_qpo_features) # making this default! 
+        (_, best_params), (scores, stds, params, best_model_fold_scores), (FPRs, TPRs, auc_scores) = gridsearch(model=model, observation_IDs=train_observation_IDs, X=context_tensor_train, y=qpo_tensor_train, gridsearch_dictionary=gridsearch_dictionary, class_or_reg=classification_or_regression, stratify=stratify, folds=folds, repetitions=repetitions, random_state=random_state, num_qpo_features=None, multiclass=multiclass) # making this default! 
 
         local_model = sklearn.base.clone(model)
 
@@ -308,13 +304,11 @@ class collection:
         
         # UPDATE INTERNAL PARAMETERS
 
-        self.evaluation_approach = evaluation_approach # done
-
         self.train_indices = train_indices # done
         self.test_indices = test_indices # done
 
         self.evaluated_model = local_model # done
-        self.prediction = predictions # done
+        self.predictions = predictions # done
 
         self.X_train = context_tensor_train # done
         self.X_test = context_tensor_test # done
@@ -331,6 +325,8 @@ class collection:
         self.FPRs = FPRs
         self.TPRs = TPRs
         self.auc_scores = auc_scores
+
+        self.fold_performances = best_model_fold_scores
 
         ### UPDATE ATTRIBUTES ###
 
@@ -497,7 +493,7 @@ class collection:
 
         self.check_evaluated("feature_importances")
 
-        predictions = self.prediction
+        predictions = self.predictions
         y_test = self.y_test
 
         regression_x, regression_y, linregress_result = results_regression(y_test=y_test, predictions=predictions, which=which, 
@@ -593,7 +589,6 @@ class collection:
         model = self.evaluated_model
         X_test = self.X_test
         y_test = self.y_test
-        predictions = self.predictions
 
         feature_names = self.context_features
 
@@ -605,9 +600,6 @@ class collection:
 
         if save_path is not None: 
             importances_df.to_csv(save_path, index=False)
-
-        else: 
-            print('error!')
 
     # FIX FOLD PERFORMANCE ! #
 
