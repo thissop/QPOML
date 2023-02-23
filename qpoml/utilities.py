@@ -5,6 +5,7 @@ import numpy
 import pandas as pd
 import pandas 
 import warnings
+import time 
  
 ## METHODS ## 
  
@@ -25,9 +26,12 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
     '''
 
     from itertools import product
+    import os 
     import sklearn 
     from sklearn.model_selection import KFold, StratifiedKFold, RepeatedStratifiedKFold, RepeatedKFold, GridSearchCV
     from qpoml.utilities import roc_and_auc
+    import multiprocessing
+
 
     FPRs = []
     TPRs = []
@@ -54,7 +58,7 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
             else: 
                 cv = KFold(n_splits=folds, random_state=random_state)
 
-        clf = GridSearchCV(model, gridsearch_dictionary, scoring='f1', cv=cv)
+        clf = GridSearchCV(model, gridsearch_dictionary, scoring='f1', cv=cv, n_jobs=8)
 
         clf.fit(X, y)
 
@@ -100,15 +104,6 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
 
     else:
 
-        params_grid = []
-        items = sorted(gridsearch_dictionary.items())
-        keys, values = zip(*items)
-        for v in product(*values):
-            params = dict(zip(keys, v))
-            params_grid.append(params)
-
-        params = params_grid
-
         if stratify is not None:
             qpos_per_obs = []
             for i in X: 
@@ -151,35 +146,27 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
         train_indices = []
         test_indices = []
 
-        for tr, te in split: 
-            train_indices.append(tr)
-            test_indices.append(te)
+        cv = [(tr, te) for tr, te in split]
+        t = time.time()
+        print('starting grid search')
+        clf = GridSearchCV(model, gridsearch_dictionary, scoring='neg_mean_absolute_error', cv=cv, n_jobs=1)
+        clf.fit(X, y)
+        print('ending grid search', time.time()-t)
+        results = clf.cv_results_
 
-        scores = []
-        stds = []
+        scores = np.array(results["mean_test_score"])
 
-        for param_dict in params_grid: 
-            fold_scores = []
+        stds = results['std_test_score']
+        params = results["params"]
 
-            for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
-                X_train_fold = np.array(X[train_indices_fold])
-                X_test_fold = np.array(X[test_indices_fold])
-                y_train_fold = np.array(y[train_indices_fold])
-                y_test_fold = np.array(y[test_indices_fold])
-                
-                local_model = sklearn.base.clone(model)
+        sort_idx = np.argsort(results['rank_test_score'])
+        best_params = clf.best_params_
 
-                local_model.set_params(**param_dict)
-                
-                local_model.fit(X_train_fold, y_train_fold)
+        scores = np.array(scores)[sort_idx]
+        stds = np.array(stds)[sort_idx]
+        params = np.array(params)[sort_idx]
 
-                score = sklearn.metrics.mean_absolute_error(y_test_fold, local_model.predict(X_test_fold)) # there, now not dependent on sklearn model.score function
-                fold_scores.append(score)
-
-            scores.append(np.mean(fold_scores))
-            stds.append(np.std(fold_scores))
-
-        best_params = params_grid[np.argmin(scores)] 
+        #processess = multiprocessing.cpu_count()-2
          # Best Regression Model on Folds
         best_model_fold_scores = []
         for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
@@ -629,7 +616,7 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-sha
         else: 
             try: 
                 explainer = shap.TreeExplainer(model, data=X_test, check_additivity=False)
-
+                print('successfully set to treeexplainer')
             except Exception as e: 
                 explainer = shap.Explainer(model, X_test, check_additivity=False)
 

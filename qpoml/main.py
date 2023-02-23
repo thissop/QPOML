@@ -144,7 +144,6 @@ class collection:
             max_length = max_simultaneous_qpos * len(qpo_features)
 
             qpo_preprocess1d_tuples = {}
-
             for qpo_feature in qpo_features:
                 if qpo_feature not in self.qpo_reserved_words:  # reserved QPO words
                     
@@ -290,7 +289,11 @@ class collection:
  
         # GRID SEARCH --> MAKE INTERNAL, FIX PIPELINE!
 
-        (_, best_params), (scores, stds, params, best_model_fold_scores), (FPRs, TPRs, auc_scores) = gridsearch(model=model, observation_IDs=train_observation_IDs, X=context_tensor_train, y=qpo_tensor_train, gridsearch_dictionary=gridsearch_dictionary, class_or_reg=classification_or_regression, stratify=stratify, folds=folds, repetitions=repetitions, random_state=random_state, num_qpo_features=None, multiclass=multiclass) # making this default! 
+        if self.classification_or_regression == 'classification':
+            (_, best_params), (scores, stds, params, best_model_fold_scores), (FPRs, TPRs, auc_scores) = gridsearch(model=model, observation_IDs=train_observation_IDs, X=context_tensor_train, y=qpo_tensor_train, gridsearch_dictionary=gridsearch_dictionary, class_or_reg=classification_or_regression, stratify=stratify, folds=folds, repetitions=repetitions, random_state=random_state, num_qpo_features=None, multiclass=multiclass) # making this default! 
+
+        else: 
+            (_, best_params), (scores, stds, params, best_model_fold_scores), (FPRs, TPRs, auc_scores) = gridsearch(model=model, observation_IDs=train_observation_IDs, X=context_tensor_train, y=qpo_tensor_train, gridsearch_dictionary=gridsearch_dictionary, class_or_reg=classification_or_regression, stratify=stratify, folds=folds, repetitions=repetitions, random_state=random_state, num_qpo_features=len(self.qpo_features)) # making this default! 
 
         local_model = sklearn.base.clone(model)
 
