@@ -1,11 +1,8 @@
-from shutil import ExecError
-from tkinter import N
 import numpy as np
 import numpy 
 import pandas as pd
 import pandas 
 import warnings
-import time 
  
 ## METHODS ## 
  
@@ -30,8 +27,8 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
     import sklearn 
     from sklearn.model_selection import KFold, StratifiedKFold, RepeatedStratifiedKFold, RepeatedKFold, GridSearchCV
     from qpoml.utilities import roc_and_auc
-    import multiprocessing
 
+    n_jobs = np.min([np.product([len(i) for i in gridsearch_dictionary.values()]), os.cpu_count()-1])
 
     FPRs = []
     TPRs = []
@@ -41,7 +38,7 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
         if not stratify: 
             stratify = None
 
-    best_model_fold_scores = None
+    best_model_fold_scores = []
     if class_or_reg == 'classification':
 
         cv = None
@@ -58,7 +55,10 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
             else: 
                 cv = KFold(n_splits=folds, random_state=random_state)
 
-        clf = GridSearchCV(model, gridsearch_dictionary, scoring='f1', cv=cv, n_jobs=8)
+        if multiclass: 
+            clf = GridSearchCV(model, gridsearch_dictionary, cv=cv, n_jobs=n_jobs)
+        else:    
+            clf = GridSearchCV(model, gridsearch_dictionary, scoring='f1', cv=cv, n_jobs=n_jobs)
 
         clf.fit(X, y)
 
@@ -86,21 +86,26 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
                     temp_model = sklearn.base.clone(best_model_config)
                     temp_model.fit(X[train_index], y[train_index])
                     
-                    fpr, tpr, auc_score = roc_and_auc(y[test_index], temp_model.predict(X[test_index]))
+                    predictions = temp_model.predict(X[test_index])
+                    fpr, tpr, auc_score = roc_and_auc(y[test_index], predictions)
                     FPRs.append(fpr)
                     TPRs.append(tpr)
                     auc_scores.append(auc_score)
+
+                    best_model_fold_scores.append(sklearn.metrics.f1_score(y[test_index], predictions))
 
             else: 
                 for train_index, test_index in cv.split(X):
                     temp_model = sklearn.base.clone(best_model_config)
                     temp_model.fit(X[train_index], y[train_index])
                     
-                    fpr, tpr, auc_score = roc_and_auc(y[test_index], temp_model.predict(X[test_index]))
+                    predictions = temp_model.predict(X[test_index])
+                    fpr, tpr, auc_score = roc_and_auc(y[test_index], predictions)
                     FPRs.append(fpr)
                     TPRs.append(tpr)
                     auc_scores.append(auc_score)
 
+                    best_model_fold_scores.append(sklearn.metrics.f1_score(y[test_index], predictions))
 
     else:
 
@@ -143,15 +148,9 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
             
             split = list(kf.split(X))
 
-        train_indices = []
-        test_indices = []
-
         cv = [(tr, te) for tr, te in split]
-        t = time.time()
-        print('starting grid search')
-        clf = GridSearchCV(model, gridsearch_dictionary, scoring='neg_mean_absolute_error', cv=cv, n_jobs=1)
+        clf = GridSearchCV(model, gridsearch_dictionary, scoring='neg_mean_absolute_error', cv=cv, n_jobs=n_jobs)
         clf.fit(X, y)
-        print('ending grid search', time.time()-t)
         results = clf.cv_results_
 
         scores = np.array(results["mean_test_score"])
@@ -162,14 +161,13 @@ def gridsearch(model, observation_IDs, X, y, gridsearch_dictionary, class_or_reg
         sort_idx = np.argsort(results['rank_test_score'])
         best_params = clf.best_params_
 
-        scores = np.array(scores)[sort_idx]
+        scores = np.abs(np.array(scores)[sort_idx])
         stds = np.array(stds)[sort_idx]
         params = np.array(params)[sort_idx]
 
         #processess = multiprocessing.cpu_count()-2
          # Best Regression Model on Folds
-        best_model_fold_scores = []
-        for train_indices_fold, test_indices_fold in zip(train_indices, test_indices):
+        for train_indices_fold, test_indices_fold in cv:
             X_train_fold = np.array(X[train_indices_fold])
             X_test_fold = np.array(X[test_indices_fold])
             y_train_fold = np.array(y[train_indices_fold])
@@ -367,7 +365,6 @@ def compare_models(first_scores:numpy.array, second_scores:numpy.array, n_train:
 
     order = np.argsort([np.mean(first_scores), np.mean(second_scores)])
     scores = np.array([first_scores, second_scores])
-    
     if better == 'lower':
         scores = scores[order]
         differences = scores[1]-scores[0]
@@ -430,7 +427,7 @@ def corrected_std(differences, n_train, n_test):
     -----
         Code borrowed from [here](https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_stats.html?highlight=statistical%20comparison%20models)
     '''
-
+    
     # kr = k times r, r times repeated k-fold crossvalidation,
     # kr equals the number of times the model was evaluated
     kr = len(differences)
@@ -506,7 +503,11 @@ def dendrogram(data:pandas.DataFrame):
     
     return corr, dist_linkage, cols 
 
+# DONE
 def calculate_vif(data:pandas.DataFrame): 
+    r'''
+    __Calculate VIFs for features in dataframe__
+    '''
     from statsmodels.stats.outliers_influence import variance_inflation_factor as vif
     
     temp = data.select_dtypes(['number'])
@@ -521,46 +522,39 @@ def calculate_vif(data:pandas.DataFrame):
 
 ### POST EVALUATION ### 
 
+# DONE
 def results_regression(y_test:numpy.array, predictions:numpy.array, which:list, preprocess1d_tuple:tuple, 
-                       regression_x=None, regression_y=None): # will work best with result vectors of my design 
+                       regression_x=None, regression_y=None):  
     r'''
-    
-    Execute "results regression" on predictions based on their true values.  
+        _Calculate "results regression" on relationship between true and predicted values_
+        Arguments
+        ---------
 
-    Parameters
-    ----------
+        y_test : np.array 
+            Array of true values
+        predictions : np.array
+            Array of predicted values       
+        which : list
+            Index of which of those features should be included. E.g. if the maximum number of QPOs for an object under consideration is 3, then if you only wanted to calculate results regression on the first QPO for every predicted observation, you would set which=[0]. If you wanted to include all three QPOs, then you would set which=[0,1,2]
+        preprocess1d_tuple : tuple
+            Tuple returned by preprocess_1d for the feature        
+        regression_x : np.array
+            If you already have the regression values, skip everything else and just calculate the regression (same for regression_y, both need to be defined)
 
-    y_test : numpy.array 
-        True values to compare predicted ones to 
+        regression_y : np.array 
+            See regression_x
 
-    predictions : numpy.array
-        Array of predicted values 
+        Returns
+        -------
 
-    which : list 
-        List of pythonic indices corresponding to the value(s) in the `y_test`/`predictions` vectors upon which `results_regression` should be run; e.g. if QPO vector is `[frequency,width,amplitude]`, `what=[0]` will run `results_regression` on frequency only because only the zeroth item in every predicted vector, the QPO frequency in this case, will be concatenated to the flattened arrays for regression. Similarly, if the QPO prediction vectors followed the form `[First QPO Frequency, First QPO Width, Second QPO Frequency, Second QPO Width]`, `what=[0,2]` would compute `results_regression` on only a concatenated array of First and Second QPO Frequencies.      
+        regression_x : np.array
+            Combined array of all the true values accumulated from the indices defined by which for the feature 
+        regression_y : np.array 
+            Combined array of all the values predicted by the model and accumulated from the indices defined by which for the feature 
+        linregress_result : 
+            Result from scipy linear regression on regression_x and regression_y (r, pval, stderr, intercept_stderr)
 
-    preprocess1d_tuple : tuple 
-        the second thing returned by preprocess1d; only one is provided for both x and y because both should be un-processed in the same way. 
-
-    Returns
-    -------
-
-    variable_name : type
-        Description 
-
-    regression_x : numpy.array 
-        Flattened (from potentially concatenated array) of true values 
-
-    regression_y : numpy.array 
-        Flattened (from potentially concatenated array) of predicted values 
-    
-    line_tuple : tuple 
-        Returns `(m,b)`, i.e. best fit slope and intercept
-
-    stats_tuple : tuple   
-        Returns `(r, pval, stderr, intercept_stderr)`; see documentation for `scipy.stats.linregress`
-
-    '''
+        '''
     
     from scipy.stats import linregress 
     from qpoml.utilities import unprocess1d 
@@ -597,7 +591,7 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-sha
             mean_importances = model.feature_importances_
             sort_idx = np.argsort(mean_importances)[::-1]
         else: 
-            raise Exception('')
+            raise Exception('Model does not have attribute feature_importances_. Try using "kernel-shap"')
                 
     elif kind=='permutation': 
         from sklearn.inspection import permutation_importance
@@ -616,7 +610,6 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-sha
         else: 
             try: 
                 explainer = shap.TreeExplainer(model, data=X_test, check_additivity=False)
-                print('successfully set to treeexplainer')
             except Exception as e: 
                 explainer = shap.Explainer(model, X_test, check_additivity=False)
 
@@ -633,7 +626,7 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-sha
         importances_df = pd.DataFrame(np.transpose(absolute_arrays[sort_idx]), columns=feature_names[sort_idx])
 
     else: 
-        raise Exception('')
+        raise Exception(f'{kind} is illegal for feature importance! Please choose different approach (options include "kernel-shap", "tree-shap", "permutation", and "default")')
 
     sort_idx = sort_idx.astype(int)
     mean_importances = mean_importances[sort_idx]
@@ -645,7 +638,9 @@ def feature_importances(model, X_test, y_test, feature_names, kind:str='tree-sha
 
     return mean_importances_df, importances_df 
     
+# DONE
 def confusion_matrix(y_test:numpy.array, predictions:numpy.array): 
+    r'''Wrapper for calculating confusion matrix and accuracy for classification'''
     from sklearn.metrics import confusion_matrix, accuracy_score
 
     y_test = np.array(y_test).flatten()
@@ -656,7 +651,12 @@ def confusion_matrix(y_test:numpy.array, predictions:numpy.array):
 
     return cm, acc
 
+# DONE
 def roc_and_auc(y_test:numpy.array, predictions:numpy.array): 
+    r'''
+    __Wrapper for calculating`ROC and AUC from y_test and predictions__
+    '''
+    
     from sklearn.metrics import roc_curve
     from sklearn.metrics import auc 
 
@@ -664,81 +664,3 @@ def roc_and_auc(y_test:numpy.array, predictions:numpy.array):
     auc_score = auc(fpr, tpr)
 
     return fpr, tpr, auc_score
-
-### PROBABLY WILL DELETE EVERYTHING BELOW ### 
-"""
-### MULTI-MODEL RELATED ###
-
-def bulk_load(n:int, qpo_csv:str, context_csv:str, qpo_preprocess:str, context_preprocess):
-    r'''
-    initialize multiple identical qpoml collection objects
-    '''
-
-   #from qpoml import collection 
-    from qpoml.new_main import collection 
-
-    loaded_collections = []
-
-    for i in range(n): 
-        c = None 
-        c = collection()
-        c.load(qpo_csv=qpo_csv, context_csv=context_csv, context_preprocess=context_preprocess, qpo_preprocess=qpo_preprocess)
-
-        loaded_collections.append(c)
-    
-    return loaded_collections
-
-### RANDOM ###
-
-def lorentzian(frequencies, f, width, amplitude):
-    return amplitude*(width/(2*3.1415659265))/((frequencies-f)**2+(width/2)**2)
-
-### XSPEC RELATED ###
-'''
-def calculate_hardness(spectrum:xspec.Spectrum, soft_range:list, hard_range:list, calculation:str='proportion'):
-    spectrum.ignore('**-'+str(soft_range[0]))
-    spectrum.ignore(str(soft_range[1])+'-**')
-    soft_sum = np.sum(spectrum.values)
-
-    spectrum.notice('**-**')
-    spectrum.ignore('**-'+str(hard_range[0]))
-    spectrum.ignore(str(hard_range[1])+'-**')
-    hard_sum = np.sum(spectrum.values)
-
-    if calculation == 'proportion':
-        return hard_sum/(soft_sum+hard_sum) 
-    elif calculation == 'ratio':
-        return hard_sum/soft_sum
-'''
-
-### TO DO ###
-r'''
-
-# these are not that important to me right now, but should be eventually (because convenience can make the package marketable) ... I think they can't be static...they need to be instance 
-
-def remove_by_vif(cutoff_value): # remove columns from context with vif more than cutoff ... note that multicollinearity is not a concern for pure accuracy, mainly a concern when dealing with feature importances, which is important in elucidating useful takeaways; only applied to context 
-    self.check_loaded('remove_by_vif')
-
-    import statsmodels.api as sm
-    from statsmodels.stats.outliers_influence import variance_inflation_factor as vif
-
-    vif_info = pd.DataFrame()
-    vif_info['VIF'] = [vif(X.values, i) for i in range(X.shape[1])]
-    vif_info['Column'] = X.columns
-    vif_info.sort_values('VIF', ascending=True)
-
-    mask = np.where(vif_info['VIF']<5)[0]
-
-    ols_cols = vif_info['Column'][mask]
-
-def remove_from_dendrogram(cutoff_value): # rename? 
-    pass 
-
-def pca_transform(): # once these happen, context_df and arrays are changed to place holder names with transformed vectors;  only applied to context
-    self.check_loaded('pca_transform') # https://github.com/thissop/MAXI-J1535/blob/main/code/machine-learning/December-%202021-2022/very_initial_sanity_check.ipynb
-
-def mds_transform(): # only applied to context
-    self.check_loaded('mds_transform')
-
-'''
-"""

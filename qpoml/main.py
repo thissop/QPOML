@@ -335,100 +335,8 @@ class collection:
 
         self.evaluated = True
     
-    # SUPERFLUOUS #
-
-    # what does sandman mean in the old slang? e.g. in hushaby song
-
     ## UTILITIES ##
 
-    def get_performance_statistics(self, predicted_feature_name:str=None):
-        r"""
-
-        FIX THIS!!! DOESN'T WORK/WILL 99% NOT WORK AFTER CURRENT CHANGES!!
-        
-
-        _Return model performance statistics_
-        Parameters
-        ----------
-        Returns
-        -------
-        statistics : `dict`
-            Dictionary of performance statistics. Currently contains `mae` and `mse`
-        predicted_feature_name : str
-            If not None, this feature name will be used to undo the preproccessing on the vector. 
-        """
-
-        self.check_loaded_evaluated("performance_statistics")
-
-        from sklearn.metrics import mean_absolute_error, mean_squared_error
-        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-        from qpoml.utilities import unprocess1d 
-
-        classification_or_regression = self.classification_or_regression
-
-        statistics = {}
-
-        predictions = self.predictions
-        y_test = self.y_test
-
-        if len(predictions) == 1:
-            predictions = predictions[0].flatten()
-            y_test = y_test[0].flatten()
-
-            if classification_or_regression == 'classification':
-        
-                statistics['accuracy'] = [accuracy_score(y_test, predictions)]
-                statistics['precision'] = [precision_score(y_test, predictions)]
-                statistics['recall'] = [recall_score(y_test, predictions)]
-                statistics['f1'] = [f1_score(y_test, predictions)]
-
-            else: 
-                
-                statistics["mse"] = [mean_squared_error(y_test, predictions)]
-                statistics["mae"] = [mean_absolute_error(y_test, predictions)]
-
-        else:
-            
-            if classification_or_regression == 'classification':
-
-                accuracy = []
-                precision = []
-                recall = []
-                f1 = []
-
-                for true, prediction in zip(y_test, predictions):
-                    accuracy.append(accuracy_score(true, prediction))
-                    precision.append(precision_score(true, prediction))
-                    recall.append(recall_score(true, prediction))
-                    f1.append(f1_score(true, prediction))
-
-                statistics['accuracy'] = accuracy 
-                statistics['precision'] = precision
-                statistics['recall'] = recall
-                statistics['f1'] = f1 
-
-            else: 
-
-                mse = []
-                mae = []
-
-                for true, prediction in zip(y_test, predictions):
-
-                    if predicted_feature_name is not None: 
-                        preprocess1d_tuple=self.qpo_preprocess1d_tuples[predicted_feature_name]
-                        true = unprocess1d(true, preprocess1d_tuple)
-                        prediction = unprocess1d(prediction, preprocess1d_tuple)
-
-                    mse.append(mean_squared_error(true, prediction))
-                    mae.append(mean_absolute_error(true, prediction))
-
-                statistics["mse"] = mse
-                statistics["mae"] = mae
-
-        return statistics
-    
-    ## UTILITY WRAPPERS ##
-    
     ### POST LOAD ###
 
     def correlation_matrix(self):
@@ -438,7 +346,7 @@ class collection:
         ----------
         Returns
         -------
-        fix after adding to utils correlation matrix docs!
+        corr, cols 
         """
 
         self.check_loaded("correlation_matrix")
@@ -465,8 +373,13 @@ class collection:
         corr, dist_linkage, cols = dendrogram(data=data)
 
         return corr, dist_linkage, cols
-
+    
+    # DONE
     def calculate_vif(self):
+        r'''
+        __Calculate VIFs for each context feature__
+        '''
+
         self.check_loaded("calculate_vif")
         from qpoml.utilities import calculate_vif
 
@@ -481,16 +394,28 @@ class collection:
 
     ### POST EVALUATION ###
 
+    # DONE
     def results_regression(self, feature_name:str, which: list):
-
         r'''
-        
+        _Calculate "results regression" on relationship between true and predicted values_
         Arguments
         ---------
         feature_name : str
-            Since preprocessing is handled under the hood within the collection class, users won't have access to their preprocess1d tuples. Thus, they need to also give the name of the feature (e.g. 'frequency') so this method can locate a saved copy of the preprocess1d tuple that matches with an output QPO feature that was registered when the collection object was loaded.
-        '''
+            The name of the feature to calculate results regression for (name needs to be the same as that feature's column in the qpo_csv that was fed to the model)
+        
+        which : list
+            Index of which of those features should be included. E.g. if the maximum number of QPOs for an object under consideration is 3, then if you only wanted to calculate results regression on the first QPO for every predicted observation, you would set which=[0]. If you wanted to include all three QPOs, then you would set which=[0,1,2]
+            
+        Returns
+        -------
 
+        regression_x : np.array
+            Combined array of all the true values accumulated from the indices defined by which for the feature 
+        regression_y : np.array 
+            Combined array of all the values predicted by the model and accumulated from the indices defined by which for the feature 
+        linregress_result : 
+            Result from scipy linear regression on regression_x and regression_y (r, pval, stderr, intercept_stderr)
+        '''
 
         from qpoml.utilities import results_regression
 
